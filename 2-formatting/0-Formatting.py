@@ -39,6 +39,7 @@ CAT_COLS = ("authorized_flag",
             "category_3")
 
 def process_transactions_df(df):
+    df = df.copy()
     for col, mapping in CAT_COLS_MAPPING.items(): df[col] = df[col].map(mapping)
     for col in CAT_COLS: df[col] = df[col].fillna(-1).astype(np.int)
     return df
@@ -62,7 +63,7 @@ def process_part(part):
     
     transactions_df = pd.read_csv(source_transactions_file_path)
     transactions_df = process_transactions_df(transactions_df)
-    transactions_df.to_csv(target_transactions_file_path)
+    transactions_df.to_csv(target_transactions_file_path, index=False)
     
     for file_name in ("train.csv", "test.csv"):
         copyfile(source_part_dir_path + "/" + file_name,
