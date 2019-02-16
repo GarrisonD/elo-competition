@@ -14,21 +14,30 @@
 
 # %run ../0-utils/0-Base.ipynb
 
+# Define helpers for reading data about _customers_ and their _transactions_:
+
 # +
 PARTS_DIR_PATH = "../data/2-formatted"
 
 def read_part_customers_df(part, clazz):
     return pd.read_csv(f"{PARTS_DIR_PATH}/%03d/{clazz}.csv" % part)
 
+display(read_part_customers_df(13, "test"),
+        read_part_customers_df(13, "train"))
+
 def read_part_transactions_df(part):
     return pd.read_csv(f"{PARTS_DIR_PATH}/%03d/transactions.csv" % part, parse_dates=["purchase_date"])
+
+display(read_part_transactions_df(13))
 # -
+
+# Define months for which transactions data will be collected:
 
 dates = pd.date_range(start="2017-01", end="2018-04", freq="M").to_period("M"); display(dates)
 
-agg = dict(purchase_amount=("min", "mean", "max"))
-
 # +
+feature_set = "purchase_amount_by_authorized_flag"
+
 def process_part(part, clazz):
     part_customers_df = read_part_customers_df(part, clazz)
     max_num_customers = int(part_customers_df.shape[0] / 5)
@@ -55,16 +64,26 @@ def process_part(part, clazz):
             ix = (customer.card_id, date.year, date.month)
             
             if not part_transactions_df.index.contains(ix):
-                X_part = np.empty((1, 9))
+                if feature_set == "purchase_amount":
+                    num_features = 3
+
+                if feature_set == "purchase_amount_by_authorized_flag":
+                    num_features = 6
+
+                X_part = np.empty((1, num_features))
                 X_part.fill(np.nan)
             else:
                 transactions_df = part_transactions_df.loc[ix]
                 
-                x1 = transactions_df.agg(agg).T.values
-                x2 = transactions_df[transactions_df.authorized_flag == "Y"].agg(agg).T.values
-                x3 = transactions_df[transactions_df.authorized_flag == "N"].agg(agg).T.values
+                if feature_set == "purchase_amount":
+                    agg = dict(purchase_amount=("min", "mean", "max"))
+                    X_part = transactions_df.agg(agg).T.values
                 
-                X_part = np.concatenate((x1, x2, x3), axis=1)
+                if feature_set == "purchase_amount_by_authorized_flag":
+                    agg = dict(purchase_amount=("min", "mean", "max"))
+                    x1 = transactions_df[transactions_df.authorized_flag == 1].agg(agg).T.values
+                    x2 = transactions_df[transactions_df.authorized_flag == 0].agg(agg).T.values
+                    X_part = np.concatenate((x1, x2), axis=1)
                 
             X_parts.append(X_part)
         
@@ -80,7 +99,7 @@ def process_part(part, clazz):
 def process_train_part(part): return process_part(part, "train")
 def process_test_part(part):  return process_part(part, "test")
 
-# process_train_part(11);
+# X, y = process_train_part(13);
 
 # +
 # %%time
@@ -97,20 +116,6 @@ y = list(x[1] for x in results)
 y = np.concatenate(y)
 
 # +
-from sklearn.preprocessing import MinMaxScaler
+np.save(f"../data/3-feature-engineered/train/{feature_set}.npy", X)
 
-X_origin_shape = X.shape
-
-X = MinMaxScaler().fit_transform(X.reshape(-1, 9))
-
-# for months without any data
-X[np.isnan(X).all(axis=1)] = -1
-
-# for months without partial data
-X[np.isnan(X)] = 0
-
-X = X.reshape(*X_origin_shape)
-# -
-
-np.save("../data/2-feature-engineered/X_train.npy", X)
-np.save("../data/2-feature-engineered/y_train.npy", y)
+# np.save("../data/3-feature-engineered/train/y.npy", y)
