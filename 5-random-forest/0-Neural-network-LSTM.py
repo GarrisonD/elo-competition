@@ -52,7 +52,7 @@ X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=13)
 train_dataset = EloDataset(X_train, y_train)
 valid_dataset = EloDataset(X_valid, y_valid)
 
-train_loader = DataLoader(train_dataset, shuffle=True, batch_size=16)
+train_loader = DataLoader(train_dataset, shuffle=True, batch_size=2048)
 valid_loader = DataLoader(valid_dataset, shuffle=True, batch_size=2048)
 # -
 
@@ -109,19 +109,19 @@ from tensorboardX import SummaryWriter
 model = Regressor().to(device)
 
 criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters())
+optimizer = optim.Adam(model.parameters(), weight_decay=0.05)
 
 step = 0
-n_epochs = 1
+n_epochs = 100
 log_every_n_steps = 5
 
 cum_train_loss = 0.
 valid_loss_min = np.Inf
 
-writer = SummaryWriter("runs/initial")
+writer = SummaryWriter("runs/initial-3-l2-5e-2")
 
-for epoch in range(n_epochs):
-    for x, y in tqdm(train_loader):
+for epoch in tqdm(range(n_epochs)):
+    for x, y in train_loader:
         x, y = x.to(device), y.to(device)
         
         y_pred = model.forward(x)
@@ -159,35 +159,36 @@ for epoch in range(n_epochs):
                 torch.save(model.state_dict(), "model.pt")
                 valid_loss_min = valid_loss
     
-            writer.add_scalar("train-loss", train_loss, step)
-            writer.add_scalar("valid-loss", valid_loss, step)
+            writer.add_scalars("loss", dict(train_loss=train_loss, valid_loss=valid_loss), step)
             
             cum_train_loss = 0.
         
         step += 1
 
 # +
-dataset = EloDataset("test")
+# dataset = EloDataset("test")
 
-test_loader = DataLoader(dataset, batch_size=2048)
+# test_loader = DataLoader(dataset, batch_size=2048)
 
-model = Regressor().to(device).eval()
-model.load_state_dict(torch.load("model.pt"))
+# model = Regressor().to(device).eval()
+# model.load_state_dict(torch.load("model.pt"))
 
-y_test = []
+# y_test = []
 
-with torch.no_grad():
-    for x in tqdm(test_loader):
-        x = x.to(device)
+# with torch.no_grad():
+#     for x in tqdm(test_loader):
+#         x = x.to(device)
 
-        y_pred = model.forward(x)
-        y_test.append(y_pred.cpu().numpy())
-# -
+#         y_pred = model.forward(x)
+#         y_test.append(y_pred.cpu().numpy())
 
-y_test = np.concatenate(y_test); y_test
+# +
+# y_test = np.concatenate(y_test); y_test
 
-submission_df = pd.read_csv("../data/raw/sample_submission.csv")
-submission_df.target = y_test
-submission_df
+# +
+# submission_df = pd.read_csv("../data/raw/sample_submission.csv")
+# submission_df.target = y_test
+# submission_df
 
-submission_df.to_csv("../submission.csv", index=False)
+# +
+# submission_df.to_csv("../submission.csv", index=False)
