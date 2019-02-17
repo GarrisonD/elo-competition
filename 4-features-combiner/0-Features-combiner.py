@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# %run ../0-utils/0-Base.ipynb
+# %run ../0-utils/0-Base.py
 
 # Define some global variables:
 
@@ -26,7 +26,7 @@ import os
 
 feature_sets = []
 
-for file_name in os.listdir(SOURCE_PATH_PREFIX):
+for file_name in sorted(os.listdir(SOURCE_PATH_PREFIX)):
     if file_name.startswith(".") or file_name == "y.npy": continue
     
     print("Loading %s..." % file_name)
@@ -47,7 +47,7 @@ X = np.concatenate(feature_sets, axis=2); X.shape
 # +
 from sklearn.preprocessing import MinMaxScaler
 
-X = X.reshape(-1, 9)
+X = X.reshape(-1, 10)
 
 # feature scaling
 X = MinMaxScaler().fit_transform(X)
@@ -55,7 +55,7 @@ X = MinMaxScaler().fit_transform(X)
 # missing values imputation
 X[np.isnan(X)] = -1
 
-X = X.reshape(-1, 15, 9)
+X = X.reshape(-1, 15, 10)
 # -
 
 # Save the data for _training_ / _testing_:

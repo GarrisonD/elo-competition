@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# %run ../0-utils/0-Base.ipynb
+# %run ../0-utils/0-Base.py
 
 # Define helpers for reading data about _customers_ and their _transactions_:
 
@@ -36,7 +36,7 @@ display(read_part_transactions_df(13))
 dates = pd.date_range(start="2017-01", end="2018-04", freq="M").to_period("M"); display(dates)
 
 # +
-feature_set = "purchase_amount_by_authorized_flag"
+feature_set = "authorized_flag"
 
 def process_part(part, clazz):
     part_customers_df = read_part_customers_df(part, clazz)
@@ -64,6 +64,9 @@ def process_part(part, clazz):
             ix = (customer.card_id, date.year, date.month)
             
             if not part_transactions_df.index.contains(ix):
+                if feature_set == "authorized_flag":
+                    num_features = 1
+
                 if feature_set == "purchase_amount":
                     num_features = 3
 
@@ -75,6 +78,10 @@ def process_part(part, clazz):
             else:
                 transactions_df = part_transactions_df.loc[ix]
                 
+                if feature_set == "authorized_flag":
+                    x = np.mean(transactions_df.authorized_flag.values)
+                    X_part = np.array([[x]])
+
                 if feature_set == "purchase_amount":
                     agg = dict(purchase_amount=("min", "mean", "max"))
                     X_part = transactions_df.agg(agg).T.values

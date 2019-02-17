@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# %run ../0-utils/0-Base.ipynb
+# %run ../0-utils/0-Base.py
 
 # Define a dataset:
 
@@ -80,7 +80,7 @@ class Regressor(nn.Module):
     def __init__(self):
         super().__init__()
         
-        self.lstm = nn.LSTM(input_size=9,
+        self.lstm = nn.LSTM(input_size=10,
                             hidden_size=64,
                             num_layers=2,
                             dropout=0.5,
