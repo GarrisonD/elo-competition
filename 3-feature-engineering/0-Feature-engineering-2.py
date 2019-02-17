@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# %run ../0-utils/0-Base.ipynb
+# %run ../0-utils/0-Base.py
 
 # Define helpers for reading data about _customers_ and their _transactions_:
 
@@ -36,7 +36,7 @@ display(read_part_transactions_df(13))
 dates = pd.date_range(start="2017-01", end="2018-04", freq="M").to_period("M"); display(dates)
 
 # +
-feature_set = "purchase_amount_by_authorized_flag"
+feature_set = "transactions_count"
 
 def process_part(part, clazz):
     part_customers_df = read_part_customers_df(part, clazz)
@@ -64,17 +64,27 @@ def process_part(part, clazz):
             ix = (customer.card_id, date.year, date.month)
             
             if not part_transactions_df.index.contains(ix):
+                if feature_set == "authorized_flag":
+                    num_features = 1
+
                 if feature_set == "purchase_amount":
                     num_features = 3
 
                 if feature_set == "purchase_amount_by_authorized_flag":
                     num_features = 6
 
+                if feature_set == "transactions_count":
+                    num_features = 1
+
                 X_part = np.empty((1, num_features))
                 X_part.fill(np.nan)
             else:
                 transactions_df = part_transactions_df.loc[ix]
                 
+                if feature_set == "authorized_flag":
+                    authorized_flag = transactions_df.authorized_flag
+                    X_part = np.array([[np.mean(authorized_flag.values)]])
+
                 if feature_set == "purchase_amount":
                     agg = dict(purchase_amount=("min", "mean", "max"))
                     X_part = transactions_df.agg(agg).T.values
@@ -85,6 +95,9 @@ def process_part(part, clazz):
                     x2 = transactions_df[transactions_df.authorized_flag == 0].agg(agg).T.values
                     X_part = np.concatenate((x1, x2), axis=1)
                 
+                if feature_set == "transactions_count":
+                    X_part = np.array([[transactions_df.shape[0]]])
+
             X_parts.append(X_part)
         
         X.append(np.concatenate(X_parts))

@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# %run ../0-utils/0-Base.ipynb
+# %run ../0-utils/0-Base.py
 
 # Define a dataset:
 
@@ -20,23 +20,20 @@
 from torch.utils.data import Dataset
 
 class EloDataset(Dataset):
-    def __init__(self, clazz):
-        self.clazz = clazz
-        
-        if clazz == "train":
-            self.X = np.load("../data/4-features-combined/train/X.npy").astype(np.float32)
-            self.y = np.load("../data/4-features-combined/train/y.npy").astype(np.float32)
-        
-        if clazz == "test":
-            self.X = np.load("../data/4-features-combined/test/X.npy").astype(np.float32)
+    def __init__(self, X, y=None):
+        if y is not None:
+            assert X.shape[0] == y.shape[0]
+            self.X = X.astype(np.float32)
+            self.y = y.astype(np.float32)
+        else:
+            self.X = X.astype(np.float32)
         
     def __len__(self): return self.X.shape[0]
     
     def __getitem__(self, index):
-        if self.clazz == "train":
+        if self.y is not None:
             return self.X[index], self.y[index]
-        
-        if self.clazz == "test":
+        else:
             return self.X[index]
 # -
 
@@ -45,17 +42,18 @@ class EloDataset(Dataset):
 # +
 from sklearn.model_selection import train_test_split
 
-from torch.utils.data import DataLoader, SequentialSampler
+from torch.utils.data import DataLoader
 
-dataset = EloDataset("train")
+X = np.load("../data/4-features-combined/train/X.npy")
+y = np.load("../data/4-features-combined/train/y.npy")
 
-train_idx, valid_idx = train_test_split(np.arange(len(dataset)), random_state=13)
+X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=13)
 
-train_sampler = SequentialSampler(train_idx)
-valid_sampler = SequentialSampler(valid_idx)
+train_dataset = EloDataset(X_train, y_train)
+valid_dataset = EloDataset(X_valid, y_valid)
 
-train_loader = DataLoader(dataset, sampler=train_sampler, batch_size=16)
-valid_loader = DataLoader(dataset, sampler=valid_sampler, batch_size=2048)
+train_loader = DataLoader(train_dataset, shuffle=True, batch_size=2048)
+valid_loader = DataLoader(valid_dataset, shuffle=True, batch_size=2048)
 # -
 
 # Define a device that will be used for training / evaluation:
@@ -80,7 +78,7 @@ class Regressor(nn.Module):
     def __init__(self):
         super().__init__()
         
-        self.lstm = nn.LSTM(input_size=9,
+        self.lstm = nn.LSTM(input_size=11,
                             hidden_size=64,
                             num_layers=2,
                             dropout=0.5,
@@ -106,19 +104,21 @@ class Regressor(nn.Module):
 # +
 from torch import optim
 from tqdm.auto import tqdm
+from tensorboardX import SummaryWriter
 
 model = Regressor().to(device)
 
 criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters())
+optimizer = optim.Adam(model.parameters(), weight_decay=0.05)
 
 step = 0
-n_epochs = 15
-log_every_n_steps = 150
+n_epochs = 100
+log_every_n_steps = 5
 
 cum_train_loss = 0.
 valid_loss_min = np.Inf
-train_losses, valid_losses = [], []
+
+writer = SummaryWriter("runs/initial")
 
 for epoch in tqdm(range(n_epochs)):
     for x, y in train_loader:
@@ -159,49 +159,36 @@ for epoch in tqdm(range(n_epochs)):
                 torch.save(model.state_dict(), "model.pt")
                 valid_loss_min = valid_loss
     
-            train_losses.append(train_loss)
-            valid_losses.append(valid_loss)
+            writer.add_scalars("loss", dict(train_loss=train_loss, valid_loss=valid_loss), step)
             
             cum_train_loss = 0.
         
         step += 1
 
 # +
-_, axs = plt.subplots(2, 1, figsize=(6, 9), sharex=True)
+# dataset = EloDataset("test")
 
-axs[0].plot(train_losses, label="Train loss")
-axs[0].plot(valid_losses, label="Validation loss")
-axs[0].legend()
-axs[0].grid()
+# test_loader = DataLoader(dataset, batch_size=2048)
 
-axs[1].plot(valid_losses, label="Validation loss")
-axs[1].legend()
-axs[1].grid()
+# model = Regressor().to(device).eval()
+# model.load_state_dict(torch.load("model.pt"))
 
-plt.show()
+# y_test = []
+
+# with torch.no_grad():
+#     for x in tqdm(test_loader):
+#         x = x.to(device)
+
+#         y_pred = model.forward(x)
+#         y_test.append(y_pred.cpu().numpy())
 
 # +
-dataset = EloDataset("test")
+# y_test = np.concatenate(y_test); y_test
 
-test_loader = DataLoader(dataset, batch_size=2048)
+# +
+# submission_df = pd.read_csv("../data/raw/sample_submission.csv")
+# submission_df.target = y_test
+# submission_df
 
-model = Regressor().to(device).eval()
-model.load_state_dict(torch.load("model.pt"))
-
-y_test = []
-
-with torch.no_grad():
-    for x in tqdm(test_loader):
-        x = x.to(device)
-
-        y_pred = model.forward(x)
-        y_test.append(y_pred.cpu().numpy())
-# -
-
-y_test = np.concatenate(y_test); y_test
-
-submission_df = pd.read_csv("../data/raw/sample_submission.csv")
-submission_df.target = y_test
-submission_df
-
-submission_df.to_csv("../submission.csv", index=False)
+# +
+# submission_df.to_csv("../submission.csv", index=False)

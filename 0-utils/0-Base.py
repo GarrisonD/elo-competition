@@ -45,6 +45,10 @@ import matplotlib.pyplot as plt
 # %config InlineBackend.figure_format = "retina"
 # -
 
+# Import `seaborn`:
+
+import seaborn as sns
+
 # Define global variables:
 
 TRANSACTIONS_N_PARTS = 256
