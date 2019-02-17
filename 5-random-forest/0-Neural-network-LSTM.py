@@ -24,11 +24,11 @@ class EloDataset(Dataset):
         self.clazz = clazz
         
         if clazz == "train":
-            self.X = np.load("../data/2-feature-engineered/X_train.npy").astype(np.float32)
-            self.y = np.load("../data/2-feature-engineered/y_train.npy").astype(np.float32)
+            self.X = np.load("../data/4-features-combined/train/X.npy").astype(np.float32)
+            self.y = np.load("../data/4-features-combined/train/y.npy").astype(np.float32)
         
         if clazz == "test":
-            self.X = np.load("../data/2-feature-engineered/X_test.npy").astype(np.float32)
+            self.X = np.load("../data/4-features-combined/test/X.npy").astype(np.float32)
         
     def __len__(self): return self.X.shape[0]
     
@@ -95,7 +95,6 @@ class Regressor(nn.Module):
         x, _ = self.lstm(x, None)
 
         x = x[:, -1]
-#         x = self.dropout(x)
         
         x = F.relu(self.fc1(x))
         x = self.dropout(x)
