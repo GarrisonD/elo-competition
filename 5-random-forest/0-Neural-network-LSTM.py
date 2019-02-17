@@ -78,7 +78,7 @@ class Regressor(nn.Module):
     def __init__(self):
         super().__init__()
         
-        self.lstm = nn.LSTM(input_size=15,
+        self.lstm = nn.LSTM(input_size=11,
                             hidden_size=64,
                             num_layers=2,
                             dropout=0.5,
@@ -118,7 +118,7 @@ log_every_n_steps = 5
 cum_train_loss = 0.
 valid_loss_min = np.Inf
 
-writer = SummaryWriter("runs/initial-3-l2-5e-2")
+writer = SummaryWriter("runs/initial")
 
 for epoch in tqdm(range(n_epochs)):
     for x, y in train_loader:

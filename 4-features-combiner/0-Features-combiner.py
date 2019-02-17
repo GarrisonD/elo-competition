@@ -62,9 +62,6 @@ numerical_feature_sets = (process_authorized_flag(),
 
 X_numerical = np.concatenate(numerical_feature_sets, axis=2)
 
-# # missing values imputation
-X_numerical[np.isnan(X_numerical)] = -1
-
 X_numerical.shape
 # -
 
@@ -80,29 +77,24 @@ def process_transactions_count():
     X_finite_mask = np.isfinite(X)
     X_finite = X[X_finite_mask].reshape(-1, 1)
 
-    X_finite[X_finite > 50] = 50
-    sns.distplot(X_finite.ravel())
-
-    discretizer = KBinsDiscretizer(strategy="quantile")
+    # performing binning
+    discretizer = KBinsDiscretizer(encode="ordinal")
     X_binned = discretizer.fit_transform(X_finite)
+    X[X_finite_mask] = X_binned.ravel()
 
-    display(discretizer.bin_edges_)
-
-    X = -np.ones((X.shape[0] * X.shape[1], X_binned.shape[1]))
-    X[X_finite_mask.ravel()] = X_binned.toarray()
-    X = X.reshape(-1, 15, 5)
-
+    # scaling to [0, 1]
+    X = MinMaxScaler().fit_transform(X)
+    X = X.reshape(-1, 15, 1)
     return X
 
 X_transactions_count = process_transactions_count()
 
 X_transactions_count.shape
-
-# +
-X = np.concatenate((X_numerical, X_transactions_count), axis=2)
-
-X.shape
 # -
+
+X = np.concatenate((X_numerical, X_transactions_count), axis=2)
+X[np.isnan(X)] = -1
+X.shape
 
 # Save the data for _training_ / _testing_:
 
