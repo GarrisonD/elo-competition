@@ -36,7 +36,7 @@ display(read_part_transactions_df(13))
 dates = pd.date_range(start="2017-01", end="2018-04", freq="M").to_period("M"); display(dates)
 
 # +
-feature_set = "authorized_flag"
+feature_set = "transactions_count"
 
 def process_part(part, clazz):
     part_customers_df = read_part_customers_df(part, clazz)
@@ -73,14 +73,17 @@ def process_part(part, clazz):
                 if feature_set == "purchase_amount_by_authorized_flag":
                     num_features = 6
 
+                if feature_set == "transactions_count":
+                    num_features = 1
+
                 X_part = np.empty((1, num_features))
                 X_part.fill(np.nan)
             else:
                 transactions_df = part_transactions_df.loc[ix]
                 
                 if feature_set == "authorized_flag":
-                    x = np.mean(transactions_df.authorized_flag.values)
-                    X_part = np.array([[x]])
+                    authorized_flag = transactions_df.authorized_flag
+                    X_part = np.array([[np.mean(authorized_flag.values)]])
 
                 if feature_set == "purchase_amount":
                     agg = dict(purchase_amount=("min", "mean", "max"))
@@ -92,6 +95,9 @@ def process_part(part, clazz):
                     x2 = transactions_df[transactions_df.authorized_flag == 0].agg(agg).T.values
                     X_part = np.concatenate((x1, x2), axis=1)
                 
+                if feature_set == "transactions_count":
+                    X_part = np.array([[transactions_df.shape[0]]])
+
             X_parts.append(X_part)
         
         X.append(np.concatenate(X_parts))

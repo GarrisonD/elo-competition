@@ -78,7 +78,7 @@ class Regressor(nn.Module):
     def __init__(self):
         super().__init__()
         
-        self.lstm = nn.LSTM(input_size=10,
+        self.lstm = nn.LSTM(input_size=15,
                             hidden_size=64,
                             num_layers=2,
                             dropout=0.5,
@@ -104,6 +104,7 @@ class Regressor(nn.Module):
 # +
 from torch import optim
 from tqdm.auto import tqdm
+from tensorboardX import SummaryWriter
 
 model = Regressor().to(device)
 
@@ -111,15 +112,16 @@ criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters())
 
 step = 0
-n_epochs = 15
-log_every_n_steps = 150
+n_epochs = 1
+log_every_n_steps = 5
 
 cum_train_loss = 0.
 valid_loss_min = np.Inf
-train_losses, valid_losses = [], []
 
-for epoch in tqdm(range(n_epochs)):
-    for x, y in train_loader:
+writer = SummaryWriter("runs/initial")
+
+for epoch in range(n_epochs):
+    for x, y in tqdm(train_loader):
         x, y = x.to(device), y.to(device)
         
         y_pred = model.forward(x)
@@ -157,26 +159,12 @@ for epoch in tqdm(range(n_epochs)):
                 torch.save(model.state_dict(), "model.pt")
                 valid_loss_min = valid_loss
     
-            train_losses.append(train_loss)
-            valid_losses.append(valid_loss)
+            writer.add_scalar("train-loss", train_loss, step)
+            writer.add_scalar("valid-loss", valid_loss, step)
             
             cum_train_loss = 0.
         
         step += 1
-
-# +
-_, axs = plt.subplots(2, 1, figsize=(6, 9), sharex=True)
-
-axs[0].plot(train_losses, label="Train loss")
-axs[0].plot(valid_losses, label="Validation loss")
-axs[0].legend()
-axs[0].grid()
-
-axs[1].plot(valid_losses, label="Validation loss")
-axs[1].legend()
-axs[1].grid()
-
-plt.show()
 
 # +
 dataset = EloDataset("test")
