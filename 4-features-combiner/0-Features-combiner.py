@@ -63,7 +63,7 @@ X_numerical.shape
 # Read and process feature sets that requires __binning__:
 
 # +
-from sklearn.preprocessing import KBinsDiscretizer
+from sklearn.preprocessing import MinMaxScaler, KBinsDiscretizer
 
 def process_transactions_count():
     X = read_feature_set("transactions_count")

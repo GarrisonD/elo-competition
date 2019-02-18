@@ -50,6 +50,7 @@ display(read_part_transactions_df(13))
 dates = pd.date_range(start="2017-01", end="2018-04", freq="M").to_period("M"); display(dates)
 
 # +
+development = True
 feature_set = "installments"
 
 def process_part(part, clazz):
@@ -70,7 +71,7 @@ def process_part(part, clazz):
     X, y = [], []
         
     for customer in part_customers_df.itertuples(index=False):
-        if clazz == "train" and max_num_customers < 0 and customer.target > -33: continue
+        if development and clazz == "train" and max_num_customers < 0 and customer.target > -33: continue
         
         X_parts = []
         
@@ -151,6 +152,8 @@ y = list(x[1] for x in results)
 y = np.concatenate(y)
 
 # +
-np.save(f"../data/3-feature-engineered/train/{feature_set}.npy", X)
+TARGET_DIR_NAME = "development" if development else "production"
 
-# np.save("../data/3-feature-engineered/train/y.npy", y)
+np.save(f"../data/3-feature-engineered/{TARGET_DIR_NAME}/train/{feature_set}.npy", X)
+
+# np.save(f"../data/3-feature-engineered/{TARGET_DIR_NAME}/train/y.npy", y)

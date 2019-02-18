@@ -120,7 +120,7 @@ log_every_n_steps = 5
 cum_train_loss = 0.
 valid_loss_min = np.Inf
 
-writer = SummaryWriter("runs/150-epoches")
+writer = SummaryWriter("runs/initial")
 
 for epoch in tqdm(range(n_epochs)):
     for x, y in train_loader:
