@@ -52,8 +52,10 @@ X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=13)
 train_dataset = EloDataset(X_train, y_train)
 valid_dataset = EloDataset(X_valid, y_valid)
 
-train_loader = DataLoader(train_dataset, shuffle=True, batch_size=2048)
-valid_loader = DataLoader(valid_dataset, shuffle=True, batch_size=2048)
+kwargs = dict(shuffle=True, batch_size=2048)
+
+train_loader = DataLoader(train_dataset, **kwargs)
+valid_loader = DataLoader(valid_dataset, **kwargs)
 # -
 
 # Define a device that will be used for training / evaluation:
@@ -78,7 +80,7 @@ class Regressor(nn.Module):
     def __init__(self):
         super().__init__()
         
-        self.lstm = nn.LSTM(input_size=11,
+        self.lstm = nn.LSTM(input_size=25,
                             hidden_size=64,
                             num_layers=2,
                             dropout=0.5,
@@ -112,13 +114,13 @@ criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), weight_decay=0.05)
 
 step = 0
-n_epochs = 100
+n_epochs = 150
 log_every_n_steps = 5
 
 cum_train_loss = 0.
 valid_loss_min = np.Inf
 
-writer = SummaryWriter("runs/initial")
+writer = SummaryWriter("runs/150-epoches")
 
 for epoch in tqdm(range(n_epochs)):
     for x, y in train_loader:

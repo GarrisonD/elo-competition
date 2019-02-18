@@ -24,30 +24,22 @@ def read_feature_set(feature_set):
     return np.load(f"{SOURCE_PATH_PREFIX}/{feature_set}.npy")
 
 def read_feature_sets(*feature_sets):
-    return list(map(read_feature_set, feature_sets))
+    return np.concatenate(list(map(read_feature_set, feature_sets)), axis=2)
 # -
 
 # Read and process __numerical__ feature sets:
 
 # +
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.preprocessing import StandardScaler
 
 def process_authorized_flag():
-    X = read_feature_set("authorized_flag")
+    return read_feature_set("authorized_flag")
 
-    X = X.reshape(-1, 1)
-    X = MinMaxScaler().fit_transform(X)
-    X = X.reshape(-1, 15, 1)
-
-    return X
+def process_installments():
+    return read_feature_set("installments")
 
 def process_purchase_amounts():
-    feature_sets = read_feature_sets(
-        "purchase_amount",
-        "purchase_amount_by_authorized_flag",
-    )
-
-    X = np.concatenate(feature_sets, axis=2)
+    X = read_feature_sets("purchase_amount", "purchase_amount_by_authorized_flag")
 
     X = X.reshape(-1, 9)
     X += np.abs(np.nanmin(X, axis=0)) + 1e-9
@@ -57,8 +49,11 @@ def process_purchase_amounts():
     
     return X
 
-numerical_feature_sets = (process_authorized_flag(),
-                          process_purchase_amounts())
+numerical_feature_sets = (
+    process_purchase_amounts(),
+    process_authorized_flag(),
+    process_installments(),
+)
 
 X_numerical = np.concatenate(numerical_feature_sets, axis=2)
 
