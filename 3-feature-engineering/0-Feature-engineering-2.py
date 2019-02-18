@@ -17,6 +17,8 @@
 # Define helpers for reading data about _customers_ and their _transactions_:
 
 # +
+from pandas.api.types import CategoricalDtype
+
 PARTS_DIR_PATH = "../data/2-formatted"
 
 def read_part_customers_df(part, clazz):
@@ -26,7 +28,19 @@ display(read_part_customers_df(13, "test"),
         read_part_customers_df(13, "train"))
 
 def read_part_transactions_df(part):
-    return pd.read_csv(f"{PARTS_DIR_PATH}/%03d/transactions.csv" % part, parse_dates=["purchase_date"])
+    df = pd.read_csv(f"{PARTS_DIR_PATH}/%03d/transactions.csv" % part, parse_dates=["purchase_date"])
+    
+    # merge 999 and -1 because both of them represent missing values
+    df.loc[df.installments == 999, "installments"] = -1
+    
+    df.installments = df.installments.astype(
+        CategoricalDtype(
+            categories=np.arange(-1, 13),
+            ordered=True,
+        )
+    )
+    
+    return df
 
 display(read_part_transactions_df(13))
 # -
@@ -36,7 +50,7 @@ display(read_part_transactions_df(13))
 dates = pd.date_range(start="2017-01", end="2018-04", freq="M").to_period("M"); display(dates)
 
 # +
-feature_set = "transactions_count"
+feature_set = "installments"
 
 def process_part(part, clazz):
     part_customers_df = read_part_customers_df(part, clazz)
@@ -75,6 +89,9 @@ def process_part(part, clazz):
 
                 if feature_set == "transactions_count":
                     num_features = 1
+                
+                if feature_set == "installments":
+                    num_features = 14
 
                 X_part = np.empty((1, num_features))
                 X_part.fill(np.nan)
@@ -97,7 +114,12 @@ def process_part(part, clazz):
                 
                 if feature_set == "transactions_count":
                     X_part = np.array([[transactions_df.shape[0]]])
-
+                
+                if feature_set == "installments":
+                    installments = transactions_df[["installments"]]
+                    installments = pd.get_dummies(installments).values
+                    X_part = np.mean(installments, axis=0).reshape(-1, 14)
+                    
             X_parts.append(X_part)
         
         X.append(np.concatenate(X_parts))
