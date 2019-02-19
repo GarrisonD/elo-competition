@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.3'
-#       jupytext_version: 0.8.6
+#       jupytext_version: 1.0.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -51,7 +51,7 @@ dates = pd.date_range(start="2017-01", end="2018-04", freq="M").to_period("M"); 
 
 # +
 development = True
-feature_set = "installments"
+feature_set = "new_transactions"
 
 def process_part(part, clazz):
     part_customers_df = read_part_customers_df(part, clazz)
@@ -94,6 +94,9 @@ def process_part(part, clazz):
                 if feature_set == "installments":
                     num_features = 14
 
+                if feature_set == "new_transactions":
+                    num_features = 1
+
                 X_part = np.empty((1, num_features))
                 X_part.fill(np.nan)
             else:
@@ -121,8 +124,11 @@ def process_part(part, clazz):
                     installments = pd.get_dummies(installments).values
                     X_part = np.mean(installments, axis=0).reshape(-1, 14)
                     
+                if feature_set == "new_transactions":
+                    new_merch = transactions_df[["new_merchant"]]
+                    X_part = [np.mean(new_merch, axis= 0)]
             X_parts.append(X_part)
-        
+
         X.append(np.concatenate(X_parts))
 
         if clazz == "train":

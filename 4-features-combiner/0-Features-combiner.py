@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.3'
-#       jupytext_version: 0.8.6
+#       jupytext_version: 1.0.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -17,7 +17,7 @@
 # Define some global variables and helpers:
 
 # +
-SOURCE_PATH_PREFIX = "../data/3-feature-engineered/train"
+SOURCE_PATH_PREFIX = "../data/3-feature-engineered/production/train"
 TARGET_PATH_PREFIX = "../data/4-features-combined/train"
 
 def read_feature_set(feature_set):
@@ -25,7 +25,10 @@ def read_feature_set(feature_set):
 
 def read_feature_sets(*feature_sets):
     return np.concatenate(list(map(read_feature_set, feature_sets)), axis=2)
+
+
 # -
+
 
 # Read and process __numerical__ feature sets:
 
@@ -37,6 +40,9 @@ def process_authorized_flag():
 
 def process_installments():
     return read_feature_set("installments")
+
+def process_new_transactions():
+    return read_feature_set("new_transactions")
 
 def process_purchase_amounts():
     X = read_feature_sets("purchase_amount", "purchase_amount_by_authorized_flag")
@@ -53,6 +59,7 @@ numerical_feature_sets = (
     process_purchase_amounts(),
     process_authorized_flag(),
     process_installments(),
+    process_new_transactions(),
 )
 
 X_numerical = np.concatenate(numerical_feature_sets, axis=2)

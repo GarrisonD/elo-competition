@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.3'
-#       jupytext_version: 0.8.6
+#       jupytext_version: 1.0.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -27,6 +27,7 @@ class EloDataset(Dataset):
             self.y = y.astype(np.float32)
         else:
             self.X = X.astype(np.float32)
+            self.y = None
         
     def __len__(self): return self.X.shape[0]
     
@@ -35,7 +36,10 @@ class EloDataset(Dataset):
             return self.X[index], self.y[index]
         else:
             return self.X[index]
+
+
 # -
+
 
 # Define *train* and *test* data loaders:
 
@@ -80,7 +84,7 @@ class Regressor(nn.Module):
     def __init__(self):
         super().__init__()
         
-        self.lstm = nn.LSTM(input_size=25,
+        self.lstm = nn.LSTM(input_size=26,
                             hidden_size=64,
                             num_layers=2,
                             dropout=0.5,
@@ -92,10 +96,9 @@ class Regressor(nn.Module):
         self.dropout = nn.Dropout()
         
     def forward(self, x):
-        x, _ = self.lstm(x, None)
+        x, _ = self.lstm(x)
+        x = x[:, -1, :]
 
-        x = x[:, -1]
-        
         x = F.relu(self.fc1(x))
         x = self.dropout(x)
         
@@ -108,7 +111,7 @@ from torch import optim
 from tqdm.auto import tqdm
 from tensorboardX import SummaryWriter
 
-model = Regressor().to(device)
+# model = Regressor().to(device)
 
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), weight_decay=0.05)
@@ -120,7 +123,7 @@ log_every_n_steps = 5
 cum_train_loss = 0.
 valid_loss_min = np.Inf
 
-writer = SummaryWriter("runs/initial")
+writer = SummaryWriter("runs/1")
 
 for epoch in tqdm(range(n_epochs)):
     for x, y in train_loader:
@@ -168,12 +171,14 @@ for epoch in tqdm(range(n_epochs)):
         step += 1
 
 # +
-# dataset = EloDataset("test")
+# X = np.load("../data/4-features-combined/test/X.npy")
 
-# test_loader = DataLoader(dataset, batch_size=2048)
+# test_dataset = EloDataset(X)
+
+# test_loader = DataLoader(test_dataset, batch_size=2048)
 
 # model = Regressor().to(device).eval()
-# model.load_state_dict(torch.load("model.pt"))
+# model.load_state_dict(torch.load("model-3.7665.pt"))
 
 # y_test = []
 
