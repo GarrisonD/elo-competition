@@ -56,10 +56,8 @@ X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=13)
 train_dataset = EloDataset(X_train, y_train)
 valid_dataset = EloDataset(X_valid, y_valid)
 
-kwargs = dict(shuffle=True, batch_size=2048)
-
-train_loader = DataLoader(train_dataset, **kwargs)
-valid_loader = DataLoader(valid_dataset, **kwargs)
+train_loader = DataLoader(train_dataset, shuffle=True, batch_size=32)
+valid_loader = DataLoader(valid_dataset, shuffle=True, batch_size=32)
 # -
 
 # Define a device that will be used for training / evaluation:
@@ -97,7 +95,7 @@ class Regressor(nn.Module):
         
     def forward(self, x):
         x, _ = self.lstm(x)
-        x = x[:, -1, :]
+        x = x[:, -1]
 
         x = F.relu(self.fc1(x))
         x = self.dropout(x)
@@ -111,64 +109,63 @@ from torch import optim
 from tqdm.auto import tqdm
 from tensorboardX import SummaryWriter
 
-# model = Regressor().to(device)
+model = Regressor().to(device)
 
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), weight_decay=0.05)
 
-step = 0
-n_epochs = 150
-log_every_n_steps = 5
-
-cum_train_loss = 0.
+n_epochs = 50
 valid_loss_min = np.Inf
-
-writer = SummaryWriter("runs/1")
+batches_per_weight_update = 1
+writer = SummaryWriter("runs/2")
 
 for epoch in tqdm(range(n_epochs)):
-    for x, y in train_loader:
+    # TRAINING
+
+    model.train()
+    cum_train_loss = 0.
+
+    for index, (x, y) in enumerate(train_loader):
         x, y = x.to(device), y.to(device)
-        
+
         y_pred = model.forward(x)
         y_pred = y_pred.reshape(-1)
         loss = criterion(y_pred, y)
-        
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        
         cum_train_loss += loss.item()
         
-        if step and step % log_every_n_steps == 0:
-            cum_valid_loss = 0.
-            
-            model.eval()
-            
-            with torch.no_grad():
-                for x, y in valid_loader:
-                    x, y = x.to(device), y.to(device)
-                    
-                    y_pred = model.forward(x)
-                    y_pred = y_pred.reshape(-1)
-                    loss = criterion(y_pred, y)
-                    
-                    cum_valid_loss += loss.item()
-            
-            model.train()
+        loss.backward()
 
-            train_loss = (cum_train_loss / log_every_n_steps) ** 0.5
-            valid_loss = (cum_valid_loss / len(valid_loader)) ** 0.5
-    
-            if valid_loss < valid_loss_min:
-                print("Validation loss decreased: %.4f => %.4f | Saving model..." % (valid_loss_min, valid_loss))
-                torch.save(model.state_dict(), "model.pt")
-                valid_loss_min = valid_loss
-    
-            writer.add_scalars("loss", dict(train_loss=train_loss, valid_loss=valid_loss), step)
-            
-            cum_train_loss = 0.
-        
-        step += 1
+        if index % batches_per_weight_update == 0 or index == len(train_loader):
+            optimizer.step()
+            optimizer.zero_grad()
+
+    train_loss = (cum_train_loss / len(train_loader)) ** 0.5
+
+    # VALIDATION
+
+    model.eval()
+    cum_valid_loss = 0.
+
+    with torch.no_grad():
+        for x, y in valid_loader:
+            x, y = x.to(device), y.to(device)
+
+            y_pred = model.forward(x)
+            y_pred = y_pred.reshape(-1)
+            loss = criterion(y_pred, y)
+            cum_valid_loss += loss.item()
+
+    valid_loss = (cum_valid_loss / len(valid_loader)) ** 0.5
+
+    if valid_loss < valid_loss_min:
+        print("Validation loss decreased: %.4f => %.4f | Saving model..." % (valid_loss_min, valid_loss))
+        torch.save(model.state_dict(), "model.pt")
+        valid_loss_min = valid_loss
+
+    writer.add_scalars("loss", dict(train_loss=train_loss, valid_loss=valid_loss), epoch)
+
+    if epoch and epoch % 10 == 0:
+        batches_per_weight_update *= 5
 
 # +
 # X = np.load("../data/4-features-combined/test/X.npy")
