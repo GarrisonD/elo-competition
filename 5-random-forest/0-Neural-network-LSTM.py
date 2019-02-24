@@ -65,11 +65,11 @@ valid_loader = DataLoader(valid_dataset, shuffle=True, batch_size=32)
 # +
 import torch
 
-np.random.seed(13)
-torch.manual_seed(13)
+# np.random.seed(13)
+# torch.manual_seed(13)
 
-torch.backends.cudnn.benchmark = False
-torch.backends.cudnn.deterministic = True
+# torch.backends.cudnn.benchmark = False
+# torch.backends.cudnn.deterministic = True
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -109,63 +109,80 @@ from torch import optim
 from tqdm.auto import tqdm
 from tensorboardX import SummaryWriter
 
-model = Regressor().to(device)
+def train(experiment_id, lr):
+    model = Regressor().to(device)
 
-criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), weight_decay=0.05)
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), weight_decay=0.05, lr=lr)
 
-n_epochs = 50
-valid_loss_min = np.Inf
-batches_per_weight_update = 1
-writer = SummaryWriter("runs/2")
+    n_epochs = 50
+    valid_loss_min = np.Inf
+    batches_per_weight_update = 1
+    writer = SummaryWriter(f"runs/{experiment_id}")
 
-for epoch in tqdm(range(n_epochs)):
-    # TRAINING
+    for epoch in tqdm(range(n_epochs)):
+        # TRAINING
 
-    model.train()
-    cum_train_loss = 0.
+        model.train()
+        cum_train_loss = 0.
 
-    for index, (x, y) in enumerate(train_loader):
-        x, y = x.to(device), y.to(device)
-
-        y_pred = model.forward(x)
-        y_pred = y_pred.reshape(-1)
-        loss = criterion(y_pred, y)
-        cum_train_loss += loss.item()
-        
-        loss.backward()
-
-        if index % batches_per_weight_update == 0 or index == len(train_loader):
-            optimizer.step()
-            optimizer.zero_grad()
-
-    train_loss = (cum_train_loss / len(train_loader)) ** 0.5
-
-    # VALIDATION
-
-    model.eval()
-    cum_valid_loss = 0.
-
-    with torch.no_grad():
-        for x, y in valid_loader:
+        for index, (x, y) in enumerate(train_loader):
             x, y = x.to(device), y.to(device)
 
             y_pred = model.forward(x)
             y_pred = y_pred.reshape(-1)
             loss = criterion(y_pred, y)
-            cum_valid_loss += loss.item()
+            cum_train_loss += loss.item()
 
-    valid_loss = (cum_valid_loss / len(valid_loader)) ** 0.5
+            loss.backward()
 
-    if valid_loss < valid_loss_min:
-        print("Validation loss decreased: %.4f => %.4f | Saving model..." % (valid_loss_min, valid_loss))
-        torch.save(model.state_dict(), "model.pt")
-        valid_loss_min = valid_loss
+            if index % batches_per_weight_update == 0 or index == len(train_loader):
+                optimizer.step()
+                optimizer.zero_grad()
 
-    writer.add_scalars("loss", dict(train_loss=train_loss, valid_loss=valid_loss), epoch)
+        train_loss = (cum_train_loss / len(train_loader)) ** 0.5
 
-    if epoch and epoch % 10 == 0:
-        batches_per_weight_update *= 5
+        # VALIDATION
+
+        model.eval()
+        cum_valid_loss = 0.
+
+        with torch.no_grad():
+            for x, y in valid_loader:
+                x, y = x.to(device), y.to(device)
+
+                y_pred = model.forward(x)
+                y_pred = y_pred.reshape(-1)
+                loss = criterion(y_pred, y)
+                cum_valid_loss += loss.item()
+
+        valid_loss = (cum_valid_loss / len(valid_loader)) ** 0.5
+
+        if valid_loss < valid_loss_min:
+            print("Validation loss decreased: %.4f => %.4f | Saving model..." % (valid_loss_min, valid_loss))
+            torch.save(model.state_dict(), "model.pt")
+            valid_loss_min = valid_loss
+
+        writer.add_scalars("loss", dict(train_loss=train_loss, valid_loss=valid_loss), epoch)
+
+    #     if epoch and epoch % 10 == 0:
+    #         batches_per_weight_update *= 5
+
+
+# +
+from torch.multiprocessing import Pool
+
+args = (
+    ("0.0001", 0.0001),
+    ("0.0005", 0.0005),
+    ("0.001", 0.001),
+    ("0.005", 0.005),
+    ("0.01", 0.01),
+    ("0.05", 0.05),
+    ("0.1", 0.1),
+)
+
+with Pool(7) as pool: pool.starmap(train, args)
 
 # +
 # X = np.load("../data/4-features-combined/test/X.npy")
