@@ -1,15 +1,12 @@
 # ---
 # jupyter:
 #   jupytext:
-#     metadata_filter:
-#       cells:
-#         additional:
-#         - ExecuteTime
+#     cell_metadata_filter: ExecuteTime
 #     text_representation:
 #       extension: .py
 #       format_name: light
 #       format_version: '1.3'
-#       jupytext_version: 0.8.6
+#       jupytext_version: 1.0.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -51,7 +48,7 @@ import seaborn as sns
 
 # Define global variables:
 
-TRANSACTIONS_N_PARTS = 256
+TRANSACTIONS_N_PARTS = 240
 
 # Define global helpers:
 
@@ -61,6 +58,9 @@ from hashlib import md5
 def to_md5(x): return md5(x.encode("utf-8"))
 def to_md5_int(x): return int(to_md5(x).hexdigest(), 16)
 def card_id_to_part(x): return to_md5_int(x) % TRANSACTIONS_N_PARTS
+
+
 # -
+
 
 def add_part(df): return df.assign(part=df.card_id.map(card_id_to_part))
