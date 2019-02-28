@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.3'
-#       jupytext_version: 1.0.0
+#       jupytext_version: 1.0.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -48,8 +48,8 @@ from sklearn.model_selection import train_test_split
 
 from torch.utils.data import DataLoader
 
-X = np.load("../data/4-features-combined/train/X.npy")
-y = np.load("../data/4-features-combined/train/y.npy")
+X = np.load("../data/3-preprocessed/train/X.npy")
+y = np.load("../data/3-preprocessed/train/y.npy")
 
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=13)
 
@@ -82,7 +82,7 @@ class Regressor(nn.Module):
     def __init__(self):
         super().__init__()
         
-        self.lstm = nn.LSTM(input_size=26,
+        self.lstm = nn.LSTM(input_size=3,
                             hidden_size=64,
                             num_layers=2,
                             dropout=0.5,
@@ -109,40 +109,32 @@ from torch import optim
 from tqdm.auto import tqdm
 from tensorboardX import SummaryWriter
 
-def train(experiment_id, lr):
-    model = Regressor().to(device)
+model = Regressor().to(device)
 
-    criterion = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), weight_decay=0.05, lr=lr)
+criterion = nn.MSELoss()
+optimizer = optim.Adam(model.parameters(), weight_decay=0.05)
 
-    n_epochs = 50
-    valid_loss_min = np.Inf
-    batches_per_weight_update = 1
-    writer = SummaryWriter(f"runs/{experiment_id}")
+counter = 0
+n_epochs = 1
+valid_loss_min = np.Inf
+update_params_every_n_iters = 1
+writer = SummaryWriter("runs/1")
 
-    for epoch in tqdm(range(n_epochs)):
-        # TRAINING
+for epoch in range(n_epochs):
+    for x, y in tqdm(train_loader):
+        x, y = x.to(device), y.to(device)
 
-        model.train()
-        cum_train_loss = 0.
+        y_pred = model.forward(x)
+        loss = criterion(y_pred, y)
+        train_loss = loss.item()
 
-        for index, (x, y) in enumerate(train_loader):
-            x, y = x.to(device), y.to(device)
+        loss.backward()
 
-            y_pred = model.forward(x)
-            y_pred = y_pred.reshape(-1)
-            loss = criterion(y_pred, y)
-            cum_train_loss += loss.item()
+#         torch.nn.utils.clip_grad_value_(model.parameters(), 0)
 
-            loss.backward()
-
-            if index % batches_per_weight_update == 0 or index == len(train_loader):
-                optimizer.step()
-                optimizer.zero_grad()
-
-        train_loss = (cum_train_loss / len(train_loader)) ** 0.5
-
-        # VALIDATION
+        if counter % update_params_every_n_iters == 0:
+            optimizer.step()
+            optimizer.zero_grad()
 
         model.eval()
         cum_valid_loss = 0.
@@ -152,7 +144,6 @@ def train(experiment_id, lr):
                 x, y = x.to(device), y.to(device)
 
                 y_pred = model.forward(x)
-                y_pred = y_pred.reshape(-1)
                 loss = criterion(y_pred, y)
                 cum_valid_loss += loss.item()
 
@@ -163,26 +154,29 @@ def train(experiment_id, lr):
             torch.save(model.state_dict(), "model.pt")
             valid_loss_min = valid_loss
 
-        writer.add_scalars("loss", dict(train_loss=train_loss, valid_loss=valid_loss), epoch)
+        writer.add_scalars("loss", dict(train_loss=train_loss, valid_loss=valid_loss), counter)
 
-    #     if epoch and epoch % 10 == 0:
-    #         batches_per_weight_update *= 5
+        model.train()
 
+        counter += 1
+        
+        if counter and counter % 50 == 0:
+            update_params_every_n_iters *= 3
 
 # +
-from torch.multiprocessing import Pool
+# from torch.multiprocessing import Pool
 
-args = (
-    ("0.0001", 0.0001),
-    ("0.0005", 0.0005),
-    ("0.001", 0.001),
-    ("0.005", 0.005),
-    ("0.01", 0.01),
-    ("0.05", 0.05),
-    ("0.1", 0.1),
-)
+# args = (
+#     ("0.0001", 0.0001),
+#     ("0.0005", 0.0005),
+#     ("0.001", 0.001),
+#     ("0.005", 0.005),
+#     ("0.01", 0.01),
+#     ("0.05", 0.05),
+#     ("0.1", 0.1),
+# )
 
-with Pool(7) as pool: pool.starmap(train, args)
+# with Pool(7) as pool: pool.starmap(train, args)
 
 # +
 # X = np.load("../data/4-features-combined/test/X.npy")
