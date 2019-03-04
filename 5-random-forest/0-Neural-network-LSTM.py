@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.3'
-#       jupytext_version: 1.0.1
+#       jupytext_version: 1.0.2
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -56,20 +56,16 @@ X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=13)
 train_dataset = EloDataset(X_train, y_train)
 valid_dataset = EloDataset(X_valid, y_valid)
 
-train_loader = DataLoader(train_dataset, shuffle=True, batch_size=32)
-valid_loader = DataLoader(valid_dataset, shuffle=True, batch_size=32)
+kwargs = dict(shuffle=True, batch_size=32)
+
+train_loader = DataLoader(train_dataset, **kwargs)
+valid_loader = DataLoader(valid_dataset, **kwargs)
 # -
 
 # Define a device that will be used for training / evaluation:
 
 # +
 import torch
-
-# np.random.seed(13)
-# torch.manual_seed(13)
-
-# torch.backends.cudnn.benchmark = False
-# torch.backends.cudnn.deterministic = True
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -82,7 +78,7 @@ class Regressor(nn.Module):
     def __init__(self):
         super().__init__()
         
-        self.lstm = nn.LSTM(input_size=3,
+        self.lstm = nn.LSTM(input_size=25,
                             hidden_size=64,
                             num_layers=2,
                             dropout=0.5,
@@ -112,56 +108,54 @@ from tensorboardX import SummaryWriter
 model = Regressor().to(device)
 
 criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), weight_decay=0.05)
 
-counter = 0
-n_epochs = 1
+optimizer = optim.Adam(model.parameters(),
+                       weight_decay=0.05)
+
+n_epochs = 50
 valid_loss_min = np.Inf
-update_params_every_n_iters = 1
 writer = SummaryWriter("runs/1")
 
 for epoch in range(n_epochs):
-    for x, y in tqdm(train_loader):
-        x, y = x.to(device), y.to(device)
-
-        y_pred = model.forward(x)
-        loss = criterion(y_pred, y)
-        train_loss = loss.item()
-
-        loss.backward()
-
-#         torch.nn.utils.clip_grad_value_(model.parameters(), 0)
-
-        if counter % update_params_every_n_iters == 0:
-            optimizer.step()
-            optimizer.zero_grad()
-
-        model.eval()
-        cum_valid_loss = 0.
-
-        with torch.no_grad():
-            for x, y in valid_loader:
-                x, y = x.to(device), y.to(device)
-
-                y_pred = model.forward(x)
-                loss = criterion(y_pred, y)
-                cum_valid_loss += loss.item()
-
-        valid_loss = (cum_valid_loss / len(valid_loader)) ** 0.5
-
-        if valid_loss < valid_loss_min:
-            print("Validation loss decreased: %.4f => %.4f | Saving model..." % (valid_loss_min, valid_loss))
-            torch.save(model.state_dict(), "model.pt")
-            valid_loss_min = valid_loss
-
-        writer.add_scalars("loss", dict(train_loss=train_loss, valid_loss=valid_loss), counter)
+    cum_train_loss = 0.
+    cum_valid_loss = 0.
+    
+    for X, y in train_loader:
+        X, y = X.to(device), y.to(device)
 
         model.train()
+    
+        # ZERO PREVIOUS GRADS
+        optimizer.zero_grad()
 
-        counter += 1
+        y_pred = model.forward(X)
+        assert y.shape == y_pred.shape
+        loss = criterion(y_pred, y)
+
+        loss.backward()
+        optimizer.step()
         
-        if counter and counter % 50 == 0:
-            update_params_every_n_iters *= 3
+        cum_train_loss += loss.item()
+
+    with torch.no_grad():
+        for X, y in valid_loader:
+            X, y = X.to(device), y.to(device)
+
+            y_pred = model.forward(X)
+            assert y.shape == y_pred.shape
+            loss = criterion(y_pred, y)
+            
+            cum_valid_loss += loss.item()
+
+    train_loss = (cum_train_loss / len(train_loader)) ** 0.5
+    valid_loss = (cum_valid_loss / len(valid_loader)) ** 0.5
+
+    if valid_loss < valid_loss_min:
+        print("Validation loss decreased: %.5f => %.5f | Saving model..." % (valid_loss_min, valid_loss))
+        torch.save(model.state_dict(), "model.pt")
+        valid_loss_min = valid_loss
+
+    writer.add_scalars("loss", dict(train_loss=train_loss, valid_loss=valid_loss), epoch)
 
 # +
 # from torch.multiprocessing import Pool
