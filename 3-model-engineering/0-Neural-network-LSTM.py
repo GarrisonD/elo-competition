@@ -81,6 +81,7 @@ class Regressor(nn.Module):
                             batch_first=True)
         
         self.tail = nn.Sequential(nn.Linear(64, 32),
+                                  nn.BatchNorm1d(32),
                                   nn.PReLU(),
                                   nn.Dropout(),
                                   nn.Linear(32, 1))
@@ -107,7 +108,7 @@ optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
 n_epochs = 50
 valid_loss_min = np.Inf
-writer = SummaryWriter("runs/test-6-prelu")
+writer = SummaryWriter("runs/test-6-prelu-batch-norm")
 
 for epoch in tqdm(range(n_epochs)):
     cum_train_loss = 0.
