@@ -108,7 +108,7 @@ optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
 n_epochs = 35
 valid_loss_min = np.Inf
-writer = SummaryWriter("runs/test-6-prelu-batch-norm")
+writer = SummaryWriter("runs/1-golden-standard")
 
 for epoch in tqdm(range(n_epochs)):
     cum_train_loss = 0.
@@ -154,25 +154,47 @@ for epoch in tqdm(range(n_epochs)):
     writer.add_scalars("loss", dict(train_loss=train_loss, valid_loss=valid_loss), epoch)
 
 # +
-X = np.load("../data/3-preprocessed/test/X.npy").astype(np.float32)
-
-test_dataset = EloDataset(X)
-
-test_loader = DataLoader(test_dataset, batch_size=2**13)
+criterion = nn.MSELoss(reduction="sum")
 
 model = Regressor().to(device).eval()
 model_state_dict = torch.load("model.pt")
 model.load_state_dict(model_state_dict)
 
-y_test = []
+y_valid_pred = []
+cum_valid_loss = 0.
+
+with torch.no_grad():
+    for X, y in valid_loader:
+        X, y = X.to(device), y.to(device)
+
+        y_pred = model.forward(X)
+        y_valid_pred.append(y_pred.cpu().numpy())
+
+        assert y.shape == y_pred.shape
+        loss = criterion(y_pred, y)
+
+        cum_valid_loss += loss.item()
+
+y_valid_pred = np.concatenate(y_valid_pred)
+assert y_valid.shape == y_valid_pred.shape
+
+valid_loss = (cum_valid_loss / X_valid.shape[0]) ** 0.5
+print("Validation loss: %.5f" % valid_loss)
+
+plt.scatter(y_valid, y_valid_pred, s=0.25);
+
+# +
+X_test, y_test = np.load("../data/3-preprocessed/test/X.npy").astype(np.float32), []
+
+test_dataset = EloDataset(X_test)
+
+test_loader = DataLoader(test_dataset, batch_size=2**13)
 
 with torch.no_grad():
     for X in test_loader:
         X = X.to(device)
-
-        y_pred = model.forward(X).cpu().numpy()
-
-        y_test.append(y_pred)
+        y_pred = model.forward(X)
+        y_test.append(y_pred.cpu().numpy())
 
 y_test = np.concatenate(y_test)
 display(y_test)
