@@ -106,7 +106,7 @@ model = Regressor().to(device)
 criterion = nn.MSELoss(reduction="sum")
 optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
-n_epochs = 50
+n_epochs = 35
 valid_loss_min = np.Inf
 writer = SummaryWriter("runs/test-6-prelu-batch-norm")
 
