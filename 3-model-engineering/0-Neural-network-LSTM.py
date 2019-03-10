@@ -21,48 +21,38 @@ from torch.utils.data import Dataset
 
 class EloDataset(Dataset):
     def __init__(self, X, y=None):
-        if y is not None:
-            assert X.shape[0] == y.shape[0]
-            self.X = X.astype(np.float32)
-            self.y = y.astype(np.float32)
-        else:
-            self.X = X.astype(np.float32)
-            self.y = None
+        self.X = X
+        self.y = y
         
-    def __len__(self): return self.X.shape[0]
+    def __len__(self):
+        return self.X.shape[0]
     
     def __getitem__(self, index):
-        if self.y is not None:
-            return self.X[index], self.y[index]
-        else:
-            return self.X[index]
+        return self.X[index], self.y[index] if self.y is not None else self.X[index]
 
 
 # -
 
 
-# Define *train* and *test* data loaders:
+# Define *train* and *valid* data loaders:
 
 # +
 from sklearn.model_selection import train_test_split
 
 from torch.utils.data import DataLoader
 
-X = np.load("../data/3-preprocessed/train/X.npy")
-y = np.load("../data/3-preprocessed/train/y.npy")
+X = np.load("../data/3-preprocessed/train/X.npy").astype(np.float32)
+y = np.load("../data/3-preprocessed/train/y.npy").astype(np.float32)
 
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=13)
 
 train_dataset = EloDataset(X_train, y_train)
 valid_dataset = EloDataset(X_valid, y_valid)
 
-kwargs = dict(shuffle=True, batch_size=32)
+kwargs = dict(shuffle=True)
 
-train_loader = DataLoader(train_dataset, **kwargs)
-valid_loader = DataLoader(valid_dataset, **kwargs)
-
-sns.distplot(y_train)
-sns.distplot(y_valid)
+train_loader = DataLoader(train_dataset, batch_size=32,   **kwargs)
+valid_loader = DataLoader(valid_dataset, batch_size=8000, **kwargs)
 # -
 
 # Define a device that will be used for training / evaluation:
@@ -109,10 +99,8 @@ from tqdm.auto import tqdm
 from tensorboardX import SummaryWriter
 
 model = Regressor().to(device)
-
-criterion = nn.MSELoss()
-
-optimizer = optim.Adam(model.parameters(), lr=5e-4, weight_decay=5e-4)
+criterion = nn.MSELoss(reduction="sum")
+optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
 n_epochs = 50
 valid_loss_min = np.Inf
@@ -122,7 +110,7 @@ for epoch in tqdm(range(n_epochs)):
     cum_train_loss = 0.
     cum_valid_loss = 0.
 
-    for X, y in train_loader:
+    for X, y in tqdm(train_loader):
         X, y = X.to(device), y.to(device)
 
         model.train()
@@ -151,8 +139,8 @@ for epoch in tqdm(range(n_epochs)):
 
             cum_valid_loss += loss.item()
 
-    train_loss = (cum_train_loss / len(train_loader)) ** 0.5
-    valid_loss = (cum_valid_loss / len(valid_loader)) ** 0.5
+    train_loss = (cum_train_loss / X_train.shape[0]) ** 0.5
+    valid_loss = (cum_valid_loss / X_valid.shape[0]) ** 0.5
 
     if valid_loss < valid_loss_min:
         print("Validation loss decreased: %.5f => %.5f | Saving model..." % (valid_loss_min, valid_loss))
