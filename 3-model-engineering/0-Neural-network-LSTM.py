@@ -80,21 +80,21 @@ class Regressor(nn.Module):
                             dropout=0.5,
                             batch_first=True)
         
-        self.fc1 = nn.Linear(64, 32)
-        self.fc2 = nn.Linear(32, 1)
+        self.tail = nn.Sequential(nn.Linear(64, 32),
+                                  nn.PReLU(),
+                                  nn.Dropout(),
+                                  nn.Linear(32, 1))
         
-        self.dropout = nn.Dropout()
+    def forward(self, X):
+        out, _ = self.lstm(X)
         
-    def forward(self, x):
-        x, _ = self.lstm(x)
-        x = x[:, -1]
+        # get only the last item
+        # see many-to-one LSTM arch
+        out = out[:, -1]
+        
+        out = self.tail(out)
 
-        x = F.relu(self.fc1(x))
-        x = self.dropout(x)
-        
-        x = self.fc2(x)
-        
-        return x
+        return out
 
 # +
 from torch import optim
@@ -107,7 +107,7 @@ optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
 n_epochs = 50
 valid_loss_min = np.Inf
-writer = SummaryWriter("runs/test-6")
+writer = SummaryWriter("runs/test-6-prelu")
 
 for epoch in tqdm(range(n_epochs)):
     cum_train_loss = 0.
