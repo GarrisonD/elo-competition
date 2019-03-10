@@ -28,7 +28,10 @@ class EloDataset(Dataset):
         return self.X.shape[0]
     
     def __getitem__(self, index):
-        return self.X[index], self.y[index] if self.y is not None else self.X[index]
+        if self.y is not None:
+            return self.X[index], self.y[index]
+        else:
+            return self.X[index]
 
 
 # -
@@ -51,8 +54,8 @@ valid_dataset = EloDataset(X_valid, y_valid)
 
 kwargs = dict(shuffle=True)
 
-train_loader = DataLoader(train_dataset, batch_size=32,   **kwargs)
-valid_loader = DataLoader(valid_dataset, batch_size=8000, **kwargs)
+train_loader = DataLoader(train_dataset, batch_size=2**5,  **kwargs)
+valid_loader = DataLoader(valid_dataset, batch_size=2**13, **kwargs)
 # -
 
 # Define a device that will be used for training / evaluation:
@@ -150,31 +153,31 @@ for epoch in tqdm(range(n_epochs)):
     writer.add_scalars("loss", dict(train_loss=train_loss, valid_loss=valid_loss), epoch)
 
 # +
-# X = np.load("../data/4-features-combined/test/X.npy")
+X = np.load("../data/3-preprocessed/test/X.npy").astype(np.float32)
 
-# test_dataset = EloDataset(X)
+test_dataset = EloDataset(X)
 
-# test_loader = DataLoader(test_dataset, batch_size=2048)
+test_loader = DataLoader(test_dataset, batch_size=2**13)
 
-# model = Regressor().to(device).eval()
-# model.load_state_dict(torch.load("model-3.7665.pt"))
+model = Regressor().to(device).eval()
+model_state_dict = torch.load("model.pt")
+model.load_state_dict(model_state_dict)
 
-# y_test = []
+y_test = []
 
-# with torch.no_grad():
-#     for x in tqdm(test_loader):
-#         x = x.to(device)
+with torch.no_grad():
+    for X in test_loader:
+        X = X.to(device)
 
-#         y_pred = model.forward(x)
-#         y_test.append(y_pred.cpu().numpy())
+        y_pred = model.forward(X).cpu().numpy()
 
-# +
-# y_test = np.concatenate(y_test); y_test
+        y_test.append(y_pred)
 
-# +
-# submission_df = pd.read_csv("../data/raw/sample_submission.csv")
-# submission_df.target = y_test
-# submission_df
+y_test = np.concatenate(y_test)
+display(y_test)
 
-# +
-# submission_df.to_csv("../submission.csv", index=False)
+submission_df = pd.read_csv("../data/raw/sample_submission.csv")
+submission_df.target = y_test
+display(submission_df)
+
+submission_df.to_csv("../submission.csv", index=False)
