@@ -17,14 +17,18 @@
 # Define global variables:
 
 NUM_MONTH_LAGS = 16
-NUM_FEATURES   = 25
+NUM_FEATURES   = 26
 
 df = pd.read_feather("../data/1-feature-engineered/aggregated-transactions-by-card-id.feather"); display(df)
+
+df["new_merchant"] = 0
+df.loc[df.month_lag >= 0, "new_merchant"] = 1
+display(df)
 
 # +
 # %%time
 
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 
 def process_purchase_amounts(df):
     features = [
@@ -48,7 +52,7 @@ def process_purchase_amounts(df):
     X += 1e-8 # get rid of zeros
     X = np.log(X)
     
-    X = MinMaxScaler().fit_transform(X)
+    X = StandardScaler().fit_transform(X)
     
     df[features] = X
     
@@ -56,12 +60,25 @@ def process_transactions_count(df):
     X = df[["count"]].values
     X = np.log(X)
     
-    X = MinMaxScaler().fit_transform(X)
+    X = StandardScaler().fit_transform(X)
     
     df[["count"]] = X
     
 process_purchase_amounts(df)
 process_transactions_count(df)
+
+# +
+import matplotlib.pyplot as plt
+import numpy as np
+
+methods = np.array(df.columns[3:])
+
+fig, axs = plt.subplots(nrows=6, ncols=4, figsize=(18, 18))
+
+for ax, interp_method in zip(axs.flat, methods):
+    sns.distplot(df[interp_method],bins=50,ax=ax)
+plt.tight_layout()
+plt.show()
 # -
 
 # Read data about _train_ and _test_ customers:
@@ -79,9 +96,9 @@ display(customers_df)
 # %%time
 
 def process_customer_transactions_df(df):
-    X = -np.ones((NUM_MONTH_LAGS, NUM_FEATURES))
+    X = -999 * np.ones((NUM_MONTH_LAGS, NUM_FEATURES))
     X[df.month_lag] = df.values[:, 2:]
-    X[np.isnan(X)] = -1
+    X[np.isnan(X)] = -999
     return X
 
 def process_transactions(df):

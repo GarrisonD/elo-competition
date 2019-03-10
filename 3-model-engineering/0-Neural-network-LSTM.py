@@ -60,6 +60,9 @@ kwargs = dict(shuffle=True, batch_size=32)
 
 train_loader = DataLoader(train_dataset, **kwargs)
 valid_loader = DataLoader(valid_dataset, **kwargs)
+
+sns.distplot(y_train)
+sns.distplot(y_valid)
 # -
 
 # Define a device that will be used for training / evaluation:
@@ -78,7 +81,7 @@ class Regressor(nn.Module):
     def __init__(self):
         super().__init__()
         
-        self.lstm = nn.LSTM(input_size=25,
+        self.lstm = nn.LSTM(input_size=26,
                             hidden_size=64,
                             num_layers=2,
                             dropout=0.5,
@@ -109,17 +112,16 @@ model = Regressor().to(device)
 
 criterion = nn.MSELoss()
 
-optimizer = optim.Adam(model.parameters(),
-                       weight_decay=0.05)
+optimizer = optim.Adam(model.parameters(), lr=5e-4, weight_decay=5e-4)
 
 n_epochs = 50
 valid_loss_min = np.Inf
-writer = SummaryWriter("runs/1")
+writer = SummaryWriter("runs/test-6")
 
-for epoch in range(n_epochs):
+for epoch in tqdm(range(n_epochs)):
     cum_train_loss = 0.
     cum_valid_loss = 0.
-    
+
     for X, y in train_loader:
         X, y = X.to(device), y.to(device)
 
@@ -134,8 +136,10 @@ for epoch in range(n_epochs):
 
         loss.backward()
         optimizer.step()
-        
+
         cum_train_loss += loss.item()
+
+    model.eval()
 
     with torch.no_grad():
         for X, y in valid_loader:
@@ -144,7 +148,7 @@ for epoch in range(n_epochs):
             y_pred = model.forward(X)
             assert y.shape == y_pred.shape
             loss = criterion(y_pred, y)
-            
+
             cum_valid_loss += loss.item()
 
     train_loss = (cum_train_loss / len(train_loader)) ** 0.5
@@ -156,21 +160,6 @@ for epoch in range(n_epochs):
         valid_loss_min = valid_loss
 
     writer.add_scalars("loss", dict(train_loss=train_loss, valid_loss=valid_loss), epoch)
-
-# +
-# from torch.multiprocessing import Pool
-
-# args = (
-#     ("0.0001", 0.0001),
-#     ("0.0005", 0.0005),
-#     ("0.001", 0.001),
-#     ("0.005", 0.005),
-#     ("0.01", 0.01),
-#     ("0.05", 0.05),
-#     ("0.1", 0.1),
-# )
-
-# with Pool(7) as pool: pool.starmap(train, args)
 
 # +
 # X = np.load("../data/4-features-combined/test/X.npy")

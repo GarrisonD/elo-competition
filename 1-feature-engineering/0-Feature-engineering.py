@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -107,7 +106,6 @@ df = df.withColumn("installments_fixed", callNewColsUdf(F.col("installments")))
 
 # Produce vector for installments
 # dropLast=True set by default. That produce value 999 to vector of zeros [0]. 
-# На самом деле я без понятия, но мне так кажется
 encoder = OneHotEncoderEstimator(inputCols=["installments_fixed"],
                                  outputCols=["installments_vec"])
 model = encoder.fit(df)

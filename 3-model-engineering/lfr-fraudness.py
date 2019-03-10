@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.3'
-#       jupytext_version: 0.8.6
+#       jupytext_version: 1.0.2
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -13,6 +13,13 @@
 # ---
 
 # %run ../0-utils/0-Base.ipynb
+
+lr = 1e-3
+print(lr)
+gamma = 0.9333
+for i in range(200):
+    lr = lr * gamma
+print(lr)
 
 # +
 # %%time
