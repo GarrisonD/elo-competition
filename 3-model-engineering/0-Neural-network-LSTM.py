@@ -75,16 +75,16 @@ class Regressor(nn.Module):
         super().__init__()
         
         self.lstm1 = nn.LSTM(input_size=26,
-                            hidden_size=64,
-                            num_layers=2,
-                            dropout=0.5,
-                            batch_first=True)
+                             hidden_size=64,
+                             num_layers=2,
+                             dropout=0.5,
+                             batch_first=True)
 
         self.lstm2 = nn.LSTM(input_size=26,
-                            hidden_size=64,
-                            num_layers=2,
-                            dropout=0.5,
-                            batch_first=True)
+                             hidden_size=64,
+                             num_layers=2,
+                             dropout=0.5,
+                             batch_first=True)
 
         self.tail = nn.Sequential(nn.Linear(128, 64),
                                   nn.BatchNorm1d(64),
