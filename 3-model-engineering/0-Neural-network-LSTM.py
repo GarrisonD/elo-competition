@@ -74,27 +74,41 @@ class Regressor(nn.Module):
     def __init__(self):
         super().__init__()
         
-        self.lstm = nn.LSTM(input_size=26,
+        self.lstm1 = nn.LSTM(input_size=26,
                             hidden_size=64,
                             num_layers=2,
                             dropout=0.5,
                             batch_first=True)
-        
-        self.tail = nn.Sequential(nn.Linear(64, 32),
+
+        self.lstm2 = nn.LSTM(input_size=26,
+                            hidden_size=64,
+                            num_layers=2,
+                            dropout=0.5,
+                            batch_first=True)
+
+        self.tail = nn.Sequential(nn.Linear(128, 64),
+                                  nn.BatchNorm1d(64),
+                                  nn.PReLU(),
+                                  nn.Dropout(),
+                                  # ---
+                                  nn.Linear(64, 32),
                                   nn.BatchNorm1d(32),
                                   nn.PReLU(),
                                   nn.Dropout(),
+                                  # ---
                                   nn.Linear(32, 1))
         
     def forward(self, X):
-        out, _ = self.lstm(X)
+        out1, _ = self.lstm1(X[:,   :-3])
+        out2, _ = self.lstm2(X[:, -3:  ])
         
         # get only the last item
         # see many-to-one LSTM arch
-        out = out[:, -1]
+        out1 = out1[:, -1]
+        out2 = out2[:, -1]
         
+        out = torch.cat((out1, out2), dim=1)
         out = self.tail(out)
-
         return out
 
 # +
@@ -108,7 +122,7 @@ optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
 n_epochs = 35
 valid_loss_min = np.Inf
-writer = SummaryWriter("runs/1-golden-standard")
+writer = SummaryWriter("runs/1-shit-standart")
 
 for epoch in tqdm(range(n_epochs)):
     cum_train_loss = 0.
