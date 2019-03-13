@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.3'
-#       jupytext_version: 1.0.2
+#       jupytext_version: 1.0.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -74,17 +74,17 @@ class Regressor(nn.Module):
     def __init__(self):
         super().__init__()
         
-        self.lstm1 = nn.LSTM(input_size=26,
-                             hidden_size=64,
-                             num_layers=2,
-                             dropout=0.5,
-                             batch_first=True)
+        self.old_transactions_lstm = nn.LSTM(input_size=26,
+                                             hidden_size=64,
+                                             num_layers=2,
+                                             dropout=0.5,
+                                             batch_first=True)
 
-        self.lstm2 = nn.LSTM(input_size=26,
-                             hidden_size=64,
-                             num_layers=2,
-                             dropout=0.5,
-                             batch_first=True)
+        self.new_transactions_lstm = nn.LSTM(input_size=26,
+                                             hidden_size=64,
+                                             num_layers=2,
+                                             dropout=0.5,
+                                             batch_first=True)
 
         self.tail = nn.Sequential(nn.Linear(128, 64),
                                   nn.BatchNorm1d(64),
@@ -99,8 +99,8 @@ class Regressor(nn.Module):
                                   nn.Linear(32, 1))
         
     def forward(self, X):
-        out1, _ = self.lstm1(X[:,   :-3])
-        out2, _ = self.lstm2(X[:, -3:  ])
+        out1, _ = self.old_transactions_lstm(X[:,   :-3])
+        out2, _ = self.new_transactions_lstm(X[:, -3:  ])
         
         # get only the last item
         # see many-to-one LSTM arch
@@ -122,7 +122,7 @@ optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
 n_epochs = 35
 valid_loss_min = np.Inf
-writer = SummaryWriter("runs/1-shit-standart")
+writer = SummaryWriter("runs/1-golden-standard")
 
 for epoch in tqdm(range(n_epochs)):
     cum_train_loss = 0.
