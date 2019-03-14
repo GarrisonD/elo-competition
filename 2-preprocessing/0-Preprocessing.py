@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.3'
-#       jupytext_version: 1.0.2
+#       jupytext_version: 1.0.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -17,18 +17,15 @@
 # Define global variables:
 
 NUM_MONTH_LAGS = 16
-NUM_FEATURES   = 26
+NUM_FEATURES   = 27
 
 df = pd.read_feather("../data/1-feature-engineered/aggregated-transactions-by-card-id.feather"); display(df)
-
-df["new_merchant"] = 0
-df.loc[df.month_lag >= 0, "new_merchant"] = 1
-display(df)
+df["avg(purchase_year)"].value_counts()
 
 # +
 # %%time
 
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 def process_purchase_amounts(df):
     features = [
@@ -64,8 +61,17 @@ def process_transactions_count(df):
     
     df[["count"]] = X
     
+def process_datetime(df):
+    features = ["avg(purchase_year)", "avg(purchase_month)"]
+    X = df[features].values
+    
+    X = MinMaxScaler().fit_transform(X)
+    
+    df[features] = X
+    
 process_purchase_amounts(df)
 process_transactions_count(df)
+process_datetime(df)
 
 # +
 import matplotlib.pyplot as plt
