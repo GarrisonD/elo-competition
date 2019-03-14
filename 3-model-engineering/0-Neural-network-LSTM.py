@@ -213,7 +213,7 @@ with torch.no_grad():
 y_test = np.concatenate(y_test)
 display(y_test)
 
-submission_df = pd.read_csv("../data/raw/sample_submission.csv")
+submission_df = pd.read_csv("../data/raw/sample_submission.csv").sort_values("card_id")
 submission_df.target = y_test
 display(submission_df)
 
