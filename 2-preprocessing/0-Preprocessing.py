@@ -20,7 +20,6 @@ NUM_MONTH_LAGS = 16
 NUM_FEATURES   = 27
 
 df = pd.read_feather("../data/1-feature-engineered/aggregated-transactions-by-card-id.feather"); display(df)
-df["avg(purchase_year)"].value_counts()
 
 # +
 # %%time
@@ -62,9 +61,13 @@ def process_transactions_count(df):
     df[["count"]] = X
     
 def process_datetime(df):
-    features = ["avg(purchase_year)", "avg(purchase_month)"]
-    X = df[features].values
+    features = [
+        "avg(purchase_year)",
+        "avg(purchase_month)",
+    ]
     
+    X = df[features].values
+
     X = MinMaxScaler().fit_transform(X)
     
     df[features] = X
