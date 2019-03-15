@@ -52,8 +52,8 @@ agg = (
     
     F.count(F.lit(1)).alias("count"),
     
-    F.avg("purchase_year"),
-    F.avg("purchase_month"),
+    F.first("purchase_year", True),
+    F.first("purchase_month", True),
     
     F.min("authorized_purchase_amount"),
     F.avg("authorized_purchase_amount"),

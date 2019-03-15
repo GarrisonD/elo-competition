@@ -122,7 +122,7 @@ optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
 n_epochs = 35
 valid_loss_min = np.Inf
-writer = SummaryWriter("runs/3-feature-session")
+writer = SummaryWriter("runs/4-submission run")
 
 for epoch in tqdm(range(n_epochs)):
     cum_train_loss = 0.

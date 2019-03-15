@@ -24,11 +24,11 @@ df = pd.read_feather("../data/1-feature-engineered/aggregated-transactions-by-ca
 # +
 df["seasons_time"] = 0
 
-df.loc[((1. <= df["avg(purchase_month)"]) & (df["avg(purchase_month)"] <= 2.))   |  (df["avg(purchase_month)"] == 12), "seasons_time"] = 1
-df.loc[(3. <= df["avg(purchase_month)"]) & (df["avg(purchase_month)"] <= 5.), "seasons_time"] = 2
-df.loc[(6. <= df["avg(purchase_month)"]) & (df["avg(purchase_month)"] <= 8.), "seasons_time"] = 3
-df.loc[(9. <= df["avg(purchase_month)"]) & (df["avg(purchase_month)"] <= 11.) , "seasons_time"] = 4
-df.session_time.unique()
+df.loc[((1 <= df["first(purchase_month, true)"]) & (df["first(purchase_month, true)"] <= 2))   |  (df["first(purchase_month, true)"] == 12), "seasons_time"] = 1
+df.loc[(3 <= df["first(purchase_month, true)"]) & (df["first(purchase_month, true)"] <= 5), "seasons_time"] = 2
+df.loc[(6 <= df["first(purchase_month, true)"]) & (df["first(purchase_month, true)"] <= 8), "seasons_time"] = 3
+df.loc[(9 <= df["first(purchase_month, true)"]) & (df["first(purchase_month, true)"] <= 11) , "seasons_time"] = 4
+df.seasons_time.unique()
 
 # +
 # %%time
@@ -71,8 +71,8 @@ def process_transactions_count(df):
     
 def process_datetime(df):
     features = [
-        "avg(purchase_year)",
-        "avg(purchase_month)",
+        "first(purchase_year, true)",
+        "first(purchase_month, true)",
         "seasons_time",
     ]
     
