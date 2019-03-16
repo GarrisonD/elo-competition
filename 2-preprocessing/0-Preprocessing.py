@@ -19,16 +19,16 @@
 NUM_MONTH_LAGS = 16
 NUM_FEATURES   = 28
 
+# Read aggregated by *card_id* data of transactions:
+
 df = pd.read_feather("../data/1-feature-engineered/aggregated-transactions-by-card-id.feather"); display(df)
 
-# +
-df["seasons_time"] = 0
+# Define a synthetic feature - *year season* - one of (winter, spring, summer, autumn):
 
-df.loc[((1 <= df["first(purchase_month, true)"]) & (df["first(purchase_month, true)"] <= 2))   |  (df["first(purchase_month, true)"] == 12), "seasons_time"] = 1
-df.loc[(3 <= df["first(purchase_month, true)"]) & (df["first(purchase_month, true)"] <= 5), "seasons_time"] = 2
-df.loc[(6 <= df["first(purchase_month, true)"]) & (df["first(purchase_month, true)"] <= 8), "seasons_time"] = 3
-df.loc[(9 <= df["first(purchase_month, true)"]) & (df["first(purchase_month, true)"] <= 11) , "seasons_time"] = 4
-df.seasons_time.unique()
+# +
+df["season"] = (df["first(purchase_month, true)"] % 12 + 3) // 3
+
+df.season = df.season.astype(np.float) # suppress MinMaxScaler warning
 
 # +
 # %%time
@@ -71,9 +71,9 @@ def process_transactions_count(df):
     
 def process_datetime(df):
     features = [
-        "first(purchase_year, true)",
         "first(purchase_month, true)",
-        "seasons_time",
+        "first(purchase_year, true)",
+        "season",
     ]
     
     X = df[features].values
@@ -81,23 +81,20 @@ def process_datetime(df):
     X = MinMaxScaler().fit_transform(X)
     
     df[features] = X
-    
+
+process_datetime(df)
 process_purchase_amounts(df)
 process_transactions_count(df)
-process_datetime(df)
 
 # +
-import matplotlib.pyplot as plt
-import numpy as np
+# %%time
 
-methods = np.array(df.columns[3:])
+_, axs = plt.subplots(nrows=7, ncols=4, figsize=(18, 24))
 
-fig, axs = plt.subplots(nrows=6, ncols=4, figsize=(18, 18))
+for ax, feature in zip(axs.flat, df.columns[3:]):
+    sns.distplot(df[feature].dropna(), ax=ax)
 
-for ax, interp_method in zip(axs.flat, methods):
-    sns.distplot(df[interp_method],bins=50,ax=ax)
 plt.tight_layout()
-plt.show()
 # -
 
 # Read data about _train_ and _test_ customers:
