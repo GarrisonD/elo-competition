@@ -143,7 +143,7 @@ test_ixs  = np.isnan(y).ravel()
 X_train, X_test, y_train = X[train_ixs], X[test_ixs], y[train_ixs]
 
 # +
-np.save("../data/3-preprocessed/train/X.npy", X_train)
-np.save("../data/3-preprocessed/train/y.npy", y_train)
+np.save("../data/2-preprocessed/train/X.npy", X_train)
+np.save("../data/2-preprocessed/train/y.npy", y_train)
 
-np.save("../data/3-preprocessed/test/X.npy", X_test)
+np.save("../data/2-preprocessed/test/X.npy", X_test)
