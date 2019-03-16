@@ -44,8 +44,8 @@ from sklearn.model_selection import train_test_split
 
 from torch.utils.data import DataLoader
 
-X = np.load("../data/3-preprocessed/train/X.npy").astype(np.float32)
-y = np.load("../data/3-preprocessed/train/y.npy").astype(np.float32)
+X = np.load("../data/2-preprocessed/train/X.npy").astype(np.float32)
+y = np.load("../data/2-preprocessed/train/y.npy").astype(np.float32)
 
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=13)
 
@@ -198,7 +198,7 @@ print("Validation loss: %.5f" % valid_loss)
 plt.scatter(y_valid, y_valid_pred, s=0.25);
 
 # +
-X_test, y_test = np.load("../data/3-preprocessed/test/X.npy").astype(np.float32), []
+X_test, y_test = np.load("../data/2-preprocessed/test/X.npy").astype(np.float32), []
 
 test_dataset = EloDataset(X_test)
 
