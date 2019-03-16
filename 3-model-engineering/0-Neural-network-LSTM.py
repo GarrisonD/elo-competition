@@ -74,13 +74,13 @@ class Regressor(nn.Module):
     def __init__(self):
         super().__init__()
         
-        self.old_transactions_lstm = nn.LSTM(input_size=26,
+        self.old_transactions_lstm = nn.LSTM(input_size=28,
                                              hidden_size=64,
                                              num_layers=2,
                                              dropout=0.5,
                                              batch_first=True)
 
-        self.new_transactions_lstm = nn.LSTM(input_size=26,
+        self.new_transactions_lstm = nn.LSTM(input_size=28,
                                              hidden_size=64,
                                              num_layers=2,
                                              dropout=0.5,
@@ -122,7 +122,7 @@ optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
 n_epochs = 35
 valid_loss_min = np.Inf
-writer = SummaryWriter("runs/1-golden-standard")
+writer = SummaryWriter("runs/4-submission run")
 
 for epoch in tqdm(range(n_epochs)):
     cum_train_loss = 0.
@@ -213,7 +213,7 @@ with torch.no_grad():
 y_test = np.concatenate(y_test)
 display(y_test)
 
-submission_df = pd.read_csv("../data/raw/sample_submission.csv")
+submission_df = pd.read_csv("../data/raw/sample_submission.csv").sort_values("card_id")
 submission_df.target = y_test
 display(submission_df)
 

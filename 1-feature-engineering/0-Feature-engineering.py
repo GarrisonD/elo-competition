@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.3'
-#       jupytext_version: 1.0.2
+#       jupytext_version: 1.0.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -26,6 +26,7 @@ spark.conf.set("spark.sql.execution.arrow.enabled", True)
 
 df = spark.read.csv("../data/raw/*_transactions.csv", header=True)
 df = df.withColumn("month_lag", F.col("month_lag").cast(T.IntegerType()))
+df = df.withColumn("purchase_date", F.col("purchase_date").cast(T.DateType()))
 df = df.withColumn("purchase_amount", F.col("purchase_amount").cast(T.DoubleType()))
 
 df = df.withColumn("authorized_flag", F.when(df.authorized_flag == "Y", 1) \
@@ -38,6 +39,9 @@ df = df.withColumn("installments", F.when(df.installments != "999", df.installme
 
 for value in range(-1, 13):
     df = df.withColumn(f"installments_{value}", F.when(df.installments == value, 1).otherwise(0))
+    
+df = df.withColumn("purchase_year", F.year("purchase_date"))
+df = df.withColumn("purchase_month", F.month("purchase_date"))
 
 agg = (
     F.avg("authorized_flag"),
@@ -47,6 +51,9 @@ agg = (
     F.max("purchase_amount"),
     
     F.count(F.lit(1)).alias("count"),
+    
+    F.first("purchase_year", True),
+    F.first("purchase_month", True),
     
     F.min("authorized_purchase_amount"),
     F.avg("authorized_purchase_amount"),

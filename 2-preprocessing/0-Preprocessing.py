@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.3'
-#       jupytext_version: 1.0.2
+#       jupytext_version: 1.0.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -17,18 +17,23 @@
 # Define global variables:
 
 NUM_MONTH_LAGS = 16
-NUM_FEATURES   = 26
+NUM_FEATURES   = 28
+
+# Read aggregated by *card_id* data of transactions:
 
 df = pd.read_feather("../data/1-feature-engineered/aggregated-transactions-by-card-id.feather"); display(df)
 
-df["new_merchant"] = 0
-df.loc[df.month_lag >= 0, "new_merchant"] = 1
-display(df)
+# Define a synthetic feature - *year season* - one of (winter, spring, summer, autumn):
+
+# +
+df["season"] = (df["first(purchase_month, true)"] % 12 + 3) // 3
+
+df.season = df.season.astype(np.float) # suppress MinMaxScaler warning
 
 # +
 # %%time
 
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 def process_purchase_amounts(df):
     features = [
@@ -64,21 +69,32 @@ def process_transactions_count(df):
     
     df[["count"]] = X
     
+def process_datetime(df):
+    features = [
+        "first(purchase_month, true)",
+        "first(purchase_year, true)",
+        "season",
+    ]
+    
+    X = df[features].values
+
+    X = MinMaxScaler().fit_transform(X)
+    
+    df[features] = X
+
+process_datetime(df)
 process_purchase_amounts(df)
 process_transactions_count(df)
 
 # +
-import matplotlib.pyplot as plt
-import numpy as np
+# %%time
 
-methods = np.array(df.columns[3:])
+_, axs = plt.subplots(nrows=7, ncols=4, figsize=(18, 24))
 
-fig, axs = plt.subplots(nrows=6, ncols=4, figsize=(18, 18))
+for ax, feature in zip(axs.flat, df.columns[3:]):
+    sns.distplot(df[feature].dropna(), ax=ax)
 
-for ax, interp_method in zip(axs.flat, methods):
-    sns.distplot(df[interp_method],bins=50,ax=ax)
 plt.tight_layout()
-plt.show()
 # -
 
 # Read data about _train_ and _test_ customers:
