@@ -4,8 +4,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: light
-#       format_version: '1.3'
-#       jupytext_version: 1.0.3
+#       format_version: '1.4'
+#       jupytext_version: 1.1.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -31,8 +31,6 @@ df["season"] = (df["first(purchase_month, true)"] % 12 + 3) // 3
 df.season = df.season.astype(np.float) # suppress MinMaxScaler warning
 
 # +
-# %%time
-
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 def process_purchase_amounts(df):
@@ -87,8 +85,6 @@ process_purchase_amounts(df)
 process_transactions_count(df)
 
 # +
-# %%time
-
 _, axs = plt.subplots(nrows=7, ncols=4, figsize=(18, 24))
 
 for ax, feature in zip(axs.flat, df.columns[3:]):
@@ -109,8 +105,6 @@ display(customers_df)
 
 
 # +
-# %%time
-
 def process_customer_transactions_df(df):
     X = -999 * np.ones((NUM_MONTH_LAGS, NUM_FEATURES))
     X[df.month_lag] = df.values[:, 2:]

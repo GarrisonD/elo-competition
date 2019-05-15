@@ -2,5 +2,4 @@ runs/
 data/
 dask-worker-space/
 .ipynb_checkpoints/
-*.ipynb
 submission.csv
