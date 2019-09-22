@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.1.1
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -23,10 +23,10 @@ class EloDataset(Dataset):
     def __init__(self, X, y=None):
         self.X = X
         self.y = y
-        
+
     def __len__(self):
         return self.X.shape[0]
-    
+
     def __getitem__(self, index):
         if self.y is not None:
             return self.X[index], self.y[index]
@@ -73,7 +73,7 @@ import torch.nn.functional as F
 class Regressor(nn.Module):
     def __init__(self):
         super().__init__()
-        
+
         self.old_transactions_lstm = nn.LSTM(input_size=28,
                                              hidden_size=64,
                                              num_layers=2,
@@ -97,16 +97,16 @@ class Regressor(nn.Module):
                                   nn.Dropout(),
                                   # ---
                                   nn.Linear(32, 1))
-        
+
     def forward(self, X):
         out1, _ = self.old_transactions_lstm(X[:,   :-3])
         out2, _ = self.new_transactions_lstm(X[:, -3:  ])
-        
+
         # get only the last item
         # see many-to-one LSTM arch
         out1 = out1[:, -1]
         out2 = out2[:, -1]
-        
+
         out = torch.cat((out1, out2), dim=1)
         out = self.tail(out)
         return out
@@ -132,7 +132,7 @@ for epoch in tqdm(range(n_epochs)):
         X, y = X.to(device), y.to(device)
 
         model.train()
-    
+
         # ZERO PREVIOUS GRADS
         optimizer.zero_grad()
 

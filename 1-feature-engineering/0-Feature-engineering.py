@@ -5,7 +5,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.4'
-#       jupytext_version: 1.1.1
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -34,35 +34,35 @@ df = df.withColumn("authorized_flag", F.when(df.authorized_flag == "Y", 1) \
 
 for key, value in dict(authorized_purchase_amount=1, not_authorized_purchase_amount=0).items():
     df = df.withColumn(key, F.when(df.authorized_flag == value, df.purchase_amount).otherwise(None))
-    
+
 df = df.withColumn("installments", F.when(df.installments != "999", df.installments).otherwise("-1"))
 
 for value in range(-1, 13):
     df = df.withColumn(f"installments_{value}", F.when(df.installments == value, 1).otherwise(0))
-    
+
 df = df.withColumn("purchase_year", F.year("purchase_date"))
 df = df.withColumn("purchase_month", F.month("purchase_date"))
 
 agg = (
     F.avg("authorized_flag"),
-    
+
     F.min("purchase_amount"),
     F.avg("purchase_amount"),
     F.max("purchase_amount"),
-    
+
     F.count(F.lit(1)).alias("count"),
-    
+
     F.first("purchase_year", True),
     F.first("purchase_month", True),
-    
+
     F.min("authorized_purchase_amount"),
     F.avg("authorized_purchase_amount"),
     F.max("authorized_purchase_amount"),
-    
+
     F.min("not_authorized_purchase_amount"),
     F.avg("not_authorized_purchase_amount"),
     F.max("not_authorized_purchase_amount"),
-    
+
     F.avg("installments_-1"),
     F.avg("installments_0"),
     F.avg("installments_1"),
