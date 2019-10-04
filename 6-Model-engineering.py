@@ -12,7 +12,9 @@
 #     name: python3
 # ---
 
-# %run ../0-utils/0-Base.py
+# %run 0-Base.py
+
+SOURCE_PATH = f'{DATA_PATH}/5-scaled'
 
 # Define a dataset:
 
@@ -44,8 +46,8 @@ from sklearn.model_selection import train_test_split
 
 from torch.utils.data import DataLoader
 
-X = np.load("../data/2-preprocessed/train/X.npy").astype(np.float32)
-y = np.load("../data/2-preprocessed/train/y.npy").astype(np.float32)
+X = np.load(f'{SOURCE_PATH}/train/X.npy').astype(np.float32)
+y = np.load(f'{SOURCE_PATH}/train/y.npy').astype(np.float32)
 
 X_train, X_valid, y_train, y_valid = train_test_split(X, y, random_state=13)
 
@@ -63,7 +65,7 @@ valid_loader = DataLoader(valid_dataset, batch_size=2**13, **kwargs)
 # +
 import torch
 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # +
 from torch import nn
@@ -74,13 +76,13 @@ class Regressor(nn.Module):
     def __init__(self):
         super().__init__()
 
-        self.old_transactions_lstm = nn.LSTM(input_size=28,
+        self.old_transactions_lstm = nn.LSTM(input_size=29,
                                              hidden_size=64,
                                              num_layers=2,
                                              dropout=0.5,
                                              batch_first=True)
 
-        self.new_transactions_lstm = nn.LSTM(input_size=28,
+        self.new_transactions_lstm = nn.LSTM(input_size=29,
                                              hidden_size=64,
                                              num_layers=2,
                                              dropout=0.5,
@@ -114,15 +116,15 @@ class Regressor(nn.Module):
 # +
 from torch import optim
 from tqdm.auto import tqdm
-from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 
 model = Regressor().to(device)
-criterion = nn.MSELoss(reduction="sum")
+criterion = nn.MSELoss(reduction='sum')
 optimizer = optim.Adam(model.parameters(), lr=5e-4)
 
 n_epochs = 35
 valid_loss_min = np.Inf
-writer = SummaryWriter("runs/4-submission run")
+writer = SummaryWriter('runs/origin')
 
 for epoch in tqdm(range(n_epochs)):
     cum_train_loss = 0.
@@ -161,17 +163,17 @@ for epoch in tqdm(range(n_epochs)):
     valid_loss = (cum_valid_loss / X_valid.shape[0]) ** 0.5
 
     if valid_loss < valid_loss_min:
-        print("Validation loss decreased: %.5f => %.5f | Saving model..." % (valid_loss_min, valid_loss))
-        torch.save(model.state_dict(), "model.pt")
+        print('Validation loss decreased: %.5f => %.5f | Saving model...' % (valid_loss_min, valid_loss))
+        torch.save(model.state_dict(), 'model.pt')
         valid_loss_min = valid_loss
 
-    writer.add_scalars("loss", dict(train_loss=train_loss, valid_loss=valid_loss), epoch)
+    writer.add_scalars('loss', dict(train_loss=train_loss, valid_loss=valid_loss), epoch)
 
 # +
-criterion = nn.MSELoss(reduction="sum")
+criterion = nn.MSELoss(reduction='sum')
 
 model = Regressor().to(device).eval()
-model_state_dict = torch.load("model.pt")
+model_state_dict = torch.load('model.pt')
 model.load_state_dict(model_state_dict)
 
 y_valid_pred = []
@@ -193,12 +195,12 @@ y_valid_pred = np.concatenate(y_valid_pred)
 assert y_valid.shape == y_valid_pred.shape
 
 valid_loss = (cum_valid_loss / X_valid.shape[0]) ** 0.5
-print("Validation loss: %.5f" % valid_loss)
+print('Validation loss: %.5f' % valid_loss)
 
 plt.scatter(y_valid, y_valid_pred, s=0.25);
 
 # +
-X_test, y_test = np.load("../data/2-preprocessed/test/X.npy").astype(np.float32), []
+X_test, y_test = np.load(f'{SOURCE_PATH}/test/X.npy').astype(np.float32), []
 
 test_dataset = EloDataset(X_test)
 
@@ -213,8 +215,9 @@ with torch.no_grad():
 y_test = np.concatenate(y_test)
 display(y_test)
 
-submission_df = pd.read_csv("../data/raw/sample_submission.csv").sort_values("card_id")
+# +
+submission_df = pd.read_csv(f'{DATA_PATH}/raw/sample_submission.csv').sort_values('card_id')
 submission_df.target = y_test
 display(submission_df)
 
-submission_df.to_csv("../submission.csv", index=False)
+submission_df.to_csv('submission.csv', index=False)
