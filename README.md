@@ -13,3 +13,9 @@ jupyter nbextension enable --py widgetsnbextension
 
 jupyter labextension install @jupyter-widgets/jupyterlab-manager
 ```
+
+For `tensorboard`:
+
+```bash
+pip install future tensorboard==1.15.0
+```
