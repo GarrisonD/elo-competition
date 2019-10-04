@@ -20,26 +20,26 @@
 
 def split_by_columns(source_file_path, target_directory_path):
     files = []
-    
+
     try:
         source_file = open(source_file_path)
         files.append(source_file)
-        
+
         columns = source_file.readline().strip().split(',')
-        
+
         target_files = [open(f'{target_directory_path}/{column}.csv', 'w') for column in columns]
         files.extend(target_files)
-        
+
         for column, file in zip(columns, target_files):
             file.write(column + '\n')
-            
+
         for row in tqdm(source_file):
             values = row.strip().split(',')
             assert len(values) == len(columns)
 
             for value, file in zip(values, target_files):
                 if value == '': value = 'NULL'
-                
+
                 file.write(value + '\n')
     finally:
         for file in files:

@@ -45,47 +45,47 @@ def process_purchase_amounts(df):
         'min(purchase_amount)',
         'mean(purchase_amount)',
         'max(purchase_amount)',
-        
+
         'min(authorized_purchase_amount)',
         'mean(authorized_purchase_amount)',
         'max(authorized_purchase_amount)',
-        
+
         'min(not_authorized_purchase_amount)',
         'mean(not_authorized_purchase_amount)',
         'max(not_authorized_purchase_amount)',
     ]
-    
+
     X = df[features].values
 
     # get rid of negative values
     X += np.abs(np.nanmin(X, axis=0))
     X += 1e-8 # get rid of zeros
     X = np.log(X)
-    
+
     X = StandardScaler().fit_transform(X)
-    
+
     df[features] = X
-    
+
 def process_transactions_count(df):
     X = df[['count']].values
-    
+
     X = np.log(X)
-    
+
     X = StandardScaler().fit_transform(X)
-    
+
     df[['count']] = X
-    
+
 def process_datetime(df):
     features = [
         'first(purchase_month)',
         'first(purchase_year)',
         'season',
     ]
-    
+
     X = df[features].values
 
     X = MinMaxScaler().fit_transform(X)
-    
+
     df[features] = X
 
 # %time process_datetime(aggregated_transactions_df)
@@ -127,7 +127,7 @@ def process_transactions(df):
     df.month_lag += 13 # solve the issue with negative month_lag while indexing
 
     X, y = [], []
-    
+
     for card_id, customer_transactions_df in df.groupby('card_id'):
         X.append(process_customer_transactions_df(customer_transactions_df))
         y.append(customers_df.loc[card_id])

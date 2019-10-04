@@ -23,10 +23,10 @@ from glob import glob
 def join_reformatted_columns(source_directory_path):
     source_file_paths = sorted(glob(f'{source_directory_path}/*.feather'))
     source_dfs = [pd.read_feather(source_file_path) for source_file_path in source_file_paths]
-    
+
     # check that all the data-frames have the same number of rows
     assert len(set(map(lambda df: df.shape[0], source_dfs))) == 1
-    
+
     return pd.concat(source_dfs, axis=1)
 
 

@@ -41,14 +41,14 @@ transactions_df['purchase_month'] = transactions_df.purchase_date.dt.month
 
 agg = {
     'authorized_flag': ['count', 'mean'],
-    
+
     'purchase_year':  ['first'],
     'purchase_month': ['first'],
-    
+
     'purchase_amount':                ['min', 'mean', 'max'],
     'authorized_purchase_amount':     ['min', 'mean', 'max'],
     'not_authorized_purchase_amount': ['min', 'mean', 'max'],
-    
+
     'installments_-1':  ['mean'],
     'installments_0':   ['mean'],
     'installments_1':   ['mean'],
