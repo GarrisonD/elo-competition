@@ -14,6 +14,12 @@ jupyter nbextension enable --py widgetsnbextension
 jupyter labextension install @jupyter-widgets/jupyterlab-manager
 ```
 
+For `pandas`:
+
+```bash
+pip install pyarrow
+```
+
 For `tensorboard`:
 
 ```bash
