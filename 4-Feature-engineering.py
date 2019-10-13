@@ -74,4 +74,8 @@ aggregated_transactions_df = aggregated_transactions_df.rename(columns={'count(a
 with pd.option_context('display.max_columns', 1000): display(aggregated_transactions_df)
 # -
 
+# Define a synthetic feature - *season of year* - one of (winter, spring, summer, autumn):
+
+# %time aggregated_transactions_df['season'] = (aggregated_transactions_df['first(purchase_month)'] % 12 + 3) // 3
+
 # %time aggregated_transactions_df.to_feather(f'{TARGET_PATH}/aggregated-transactions-by-card-id.feather')
