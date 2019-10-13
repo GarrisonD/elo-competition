@@ -28,14 +28,6 @@ TARGET_PATH = f'{DATA_PATH}/5-scaled'
 # %time aggregated_transactions_df = pd.read_feather(f'{SOURCE_PATH}/aggregated-transactions-by-card-id.feather')
 
 with pd.option_context('display.max_columns', 1000): display(aggregated_transactions_df)
-# -
-
-# Define a synthetic feature - *year season* - one of (winter, spring, summer, autumn):
-
-# +
-aggregated_transactions_df['season'] = (aggregated_transactions_df['first(purchase_month)'] % 12 + 3) // 3
-
-aggregated_transactions_df.season = aggregated_transactions_df.season.astype('float') # suppress MinMaxScaler warning
 
 # +
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
