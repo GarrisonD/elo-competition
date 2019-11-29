@@ -7,10 +7,11 @@ from elo_competition.utils import split_by_columns
 SOURCE_DIR_PATH = 'tests/split-by-columns-source'
 TARGET_DIR_PATH = 'tests/split-by-columns-target'
 
-def setup_module():
+def cleanup_target_dir():
     os.system(f'rm -rf {TARGET_DIR_PATH}/*')
 
-teardown_module = setup_module
+setup_module    = cleanup_target_dir
+teardown_module = cleanup_target_dir
 
 def test_split_by_columns():
     split_by_columns(f'{SOURCE_DIR_PATH}/data.csv', TARGET_DIR_PATH)
