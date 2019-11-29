@@ -14,19 +14,9 @@
 #     name: python3
 # ---
 
-# Import `numpy`:
-
 import numpy as np
 
-# Import `pandas` and configure it:
-
-# +
 import pandas as pd
-
-pd.options.display.max_rows = 10
-# -
-
-# Import `matplotlib` and configure it:
 
 # +
 import matplotlib.pyplot as plt
@@ -36,14 +26,8 @@ import matplotlib.pyplot as plt
 # %config InlineBackend.figure_format = 'retina'
 # -
 
-# Import `seaborn`:
-
 import seaborn as sns
-
-# Import `tqdm`:
 
 from tqdm.auto import tqdm
 
-# Define global variables:
-
-DATA_PATH = 'data'
+DATA_PATH = '../data'
