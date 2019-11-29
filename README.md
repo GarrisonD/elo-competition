@@ -13,8 +13,6 @@ chmod 600 data/raw/*
 For `tqdm` to work properly:
 
 ```bash
-jupyter nbextension enable --py widgetsnbextension
-
 jupyter labextension install @jupyter-widgets/jupyterlab-manager
 ```
 
