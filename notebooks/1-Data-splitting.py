@@ -13,7 +13,7 @@
 #     name: python3
 # ---
 
-# %run 0-Base.py
+# %run 0-Base.ipynb
 
 from elo_competition.utils import split_by_columns
 

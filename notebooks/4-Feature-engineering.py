@@ -13,7 +13,7 @@
 #     name: python3
 # ---
 
-# %run 0-Base.py
+# %run 0-Base.ipynb
 
 SOURCE_PATH = f'{DATA_PATH}/3-joined'
 TARGET_PATH = f'{DATA_PATH}/4-feature-engineered'
