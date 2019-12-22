@@ -7,7 +7,7 @@ unzip data/raw/elo-merchant-category-recommendation.zip -d data/raw
 
 rm data/raw/elo-merchant-category-recommendation.zip
 
-chmod 600 data/raw/*
+chmod 644 data/raw/* # if you use kaggle command installed with sudo
 ```
 
 For `tqdm` to work properly:
