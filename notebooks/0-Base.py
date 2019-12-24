@@ -22,18 +22,21 @@
 
 import numpy as np
 
+# +
 import pandas as pd
+
+pd.set_option("display.max_columns", 1000)
 
 # +
 import matplotlib.pyplot as plt
 
 # %matplotlib inline
 
-# %config InlineBackend.figure_format = 'retina'
+# %config InlineBackend.figure_format = "retina"
 # -
 
 import seaborn as sns
 
 from tqdm.auto import tqdm
 
-DATA_PATH = '../data'
+DATA_PATH = "../data"
