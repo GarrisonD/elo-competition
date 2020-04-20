@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.4.1
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -15,19 +15,21 @@
 
 # %run 0-Base.ipynb
 
-from elo_competition.data import read_card_owners_csv, reduce_mem_usage
-
 SOURCE_PATH = f"{DATA_PATH}/raw"
 TARGET_PATH = f"{DATA_PATH}/1-reformatted"
 
 # #### Reformatting data about card owners:
 
-# +
+from elo_competition.data import read_card_owners_csv, reduce_mem_usage
+
 # %time train_df = read_card_owners_csv(f"{SOURCE_PATH}/train.csv")
 # %time train_df = reduce_mem_usage(train_df)
-
 display(train_df)
-# -
+train_df.info()
+
+train_df.card_id = train_df.card_id.astype("string")
+
+train_df.values
 
 train_df.info()
 
@@ -69,6 +71,9 @@ transactions_df = pd.concat(
     ignore_index=True,
     copy=False,
 )
+
+del historical_transactions_df
+del new_merchant_transactions_df
 # -
 
 # %time transactions_df = reduce_mem_usage(transactions_df)

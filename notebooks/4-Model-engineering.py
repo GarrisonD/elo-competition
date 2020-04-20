@@ -57,7 +57,7 @@ valid_dataset = EloDataset(X_valid, y_valid)
 
 kwargs = dict(shuffle=True)
 
-train_loader = DataLoader(train_dataset, batch_size=2**5,  **kwargs)
+train_loader = DataLoader(train_dataset, batch_size=2**10, **kwargs)
 valid_loader = DataLoader(valid_dataset, batch_size=2**13, **kwargs)
 # -
 
@@ -115,17 +115,22 @@ class Regressor(nn.Module):
         return out
 
 # +
+from math import sqrt
 from torch import optim
 from tqdm.auto import tqdm
 from torch.utils.tensorboard import SummaryWriter
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 model = Regressor().to(device)
 criterion = nn.MSELoss(reduction='sum')
-optimizer = optim.Adam(model.parameters(), lr=5e-4)
+optimizer = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-4)
 
-n_epochs = 35
+# optimizer = optim.SGD(model.parameters(), lr=1e-4, weight_decay=1e-5)
+# scheduler = ReduceLROnPlateau(optimizer, verbose=True, factor=0.25, patience=5)
+
+n_epochs = 75
 valid_loss_min = np.Inf
-writer = SummaryWriter('runs/origin')
+writer = SummaryWriter('runs/adam-12')
 
 for epoch in tqdm(range(n_epochs)):
     cum_train_loss = 0.
@@ -160,15 +165,17 @@ for epoch in tqdm(range(n_epochs)):
 
             cum_valid_loss += loss.item()
 
-    train_loss = (cum_train_loss / X_train.shape[0]) ** 0.5
-    valid_loss = (cum_valid_loss / X_valid.shape[0]) ** 0.5
+    train_loss = sqrt(cum_train_loss / X_train.shape[0])
+    valid_loss = sqrt(cum_valid_loss / X_valid.shape[0])
+    
+    writer.add_scalars('loss', dict(train_loss=train_loss, valid_loss=valid_loss), epoch)
+    
+#     scheduler.step(valid_loss)
 
     if valid_loss < valid_loss_min:
-        print('Validation loss decreased: %.5f => %.5f | Saving model...' % (valid_loss_min, valid_loss))
+        print('Validation loss decreased on %02d epoch: %.5f => %.5f | Saving model...' % (epoch + 1, valid_loss_min, valid_loss))
         torch.save(model.state_dict(), 'model.pt')
         valid_loss_min = valid_loss
-
-    writer.add_scalars('loss', dict(train_loss=train_loss, valid_loss=valid_loss), epoch)
 
 # +
 criterion = nn.MSELoss(reduction='sum')

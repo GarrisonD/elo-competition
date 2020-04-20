@@ -59,16 +59,22 @@ agg = {
     "installments_999": ["mean"],
 }
 
-# +
 # %time aggregated_transactions_df = transactions_df.groupby(["card_id", "month_lag"]).agg(agg)
-aggregated_transactions_df.columns = [f"{fn}({col})" for col, fn in aggregated_transactions_df.columns]
-aggregated_transactions_df = aggregated_transactions_df.rename(columns={"count(authorized_flag)": "count"}).reset_index()
-
-display(aggregated_transactions_df)
-# -
+aggregated_transactions_df.columns = [f"{col}_{fn}" for col, fn in aggregated_transactions_df.columns]
+aggregated_transactions_df = aggregated_transactions_df.rename(columns={"authorized_flag_count": "count"}).reset_index()
 
 # Define a synthetic feature - *season of year* - one of (winter, spring, summer, autumn):
 
-# %time aggregated_transactions_df["season"] = (aggregated_transactions_df["first(purchase_month)"] % 12 + 3) // 3
+# %time aggregated_transactions_df["season"] = (aggregated_transactions_df["purchase_month_first"] % 12 + 3) // 3
+
+aggregated_transactions_df.info()
+
+# +
+from elo_competition.data import reduce_mem_usage
+
+# %time aggregated_transactions_df = reduce_mem_usage(aggregated_transactions_df)
+# -
+
+aggregated_transactions_df.info()
 
 # %time aggregated_transactions_df.to_feather(f"{TARGET_PATH}/aggregated-transactions-by-card-id.feather")

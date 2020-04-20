@@ -48,21 +48,3 @@ MANIFEST
 
 # Per-project virtualenvs
 .venv*/
-
-data/*
-!data/.keep
-!data/raw/.keep
-!data/1-splitted/.keep
-!data/1-splitted/historical_transactions/.keep
-!data/1-splitted/new_merchant_transactions/.keep
-!data/2-reformatted/.keep
-!data/2-reformatted/historical_transactions/.keep
-!data/2-reformatted/new_merchant_transactions/.keep
-!data/3-joined/.keep
-!data/4-feature-engineered/.keep
-!data/5-scaled/.keep
-!data/5-scaled/train/.keep
-!data/5-scaled/test/.keep
-
-submissions/*
-!submissions/.keep
